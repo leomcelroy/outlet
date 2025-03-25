@@ -1,11 +1,15 @@
-import { render, html, svg } from "lit-html";
+import { render } from "lit-html";
+
 import { addPanZoom } from "./events/addPanZoom.js";
 import { addSketching } from "./events/addSketching.js";
 import { addPtDragging } from "./events/addPtDragging.js";
 import { addLineSelection } from "./events/addLineSelection.js";
 import { addSelectionBox } from "./events/addSelectionBox.js";
+import { addCaching } from "./events/addCaching.js";
 import { addDropUpload } from "./events/addDropUpload.js";
 import { deleteGeometry } from "./utils/deleteGeometry.js";
+
+import { hitEsc } from "./utils/hitEsc.js";
 
 import { view } from "./view/view.js";
 
@@ -71,6 +75,8 @@ export function init() {
     }
   });
 
+  addCaching(state);
+
   renderLoop();
 
   window.addEventListener("keydown", (e) => {
@@ -91,17 +97,4 @@ export function init() {
       deleteGeometry(state);
     }
   });
-}
-
-function hitEsc() {
-  const escEvent = new KeyboardEvent("keydown", {
-    key: "Escape",
-    code: "Escape",
-    keyCode: 27,
-    which: 27,
-    bubbles: true,
-    cancelable: true,
-  });
-
-  document.dispatchEvent(escEvent);
 }

@@ -33,11 +33,6 @@ export function deleteGeometry(state) {
   // Remove all marked geometry
   state.geometries = state.geometries.filter((g) => !toRemove.has(g.id));
 
-  // Clean up constraints
-  state.constraints = state.constraints.filter(
-    (c) => !c.geometries.some((id) => toRemove.has(id)),
-  );
-
   // Clean up unused parameters
   const usedParams = new Set();
   state.geometries.forEach((g) => {
