@@ -21,6 +21,7 @@ const STATE = {
   currentPoint: null,
   lineStart: null,
   selectBox: null,
+  plugIns: [],
 };
 
 export function patchState(callback = null) {

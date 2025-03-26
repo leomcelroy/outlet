@@ -1,76 +1,40 @@
 import { html, svg } from "lit-html";
 import { drawSelectBox } from "./drawSelectBox.js";
-import { download } from "../utils/download.js";
+import { drawTopBar } from "./drawTopBar.js";
+import { drawToolbar } from "./drawToolbar.js";
 
 export function view(state) {
   return html`
     <div class="h-screen w-screen flex flex-col">
-      <!-- Top bar -->
-      <div class="bg-gray-100 border-b">
+      ${drawTopBar(state)}
+
+      <div class="flex flex-1">
         <div
-          @click=${(e) => {
-            const name = prompt("Please provide a filename.");
-            if (name === "" || !name) return;
-
-            const file = JSON.stringify({
-              geometries: state.geometries,
-              params: state.params,
-            });
-
-            download(`${name}.sketch.json`, file);
-          }}
-          class="hover:bg-gray-200 w-fit p-2 cursor-pointer"
+          class="w-64 border-r border-gray-400 p-4 bg-gray-300 shadow-[0.25rem_0_0.5rem_rgba(0,0,0,0.1)]"
         >
-          Download
+          Plug-Ins
         </div>
-      </div>
 
-      <div class="w-1/2 p-2 mx-auto">
-        <svg
-          sketch-board
-          class="w-full aspect-square bg-gray-100 border border-gray-400 rounded"
+        <div class="relative flex-1">
+          <svg sketch-board class="w-[100%] h-[100%]">
+            <g transform-group>
+              ${drawSelectBox(state)}
+              <!-- -- -->
+              ${drawLines(state)}
+              <!-- -- -->
+              ${drawTempLine(state)}
+              <!-- -- -->
+              ${drawPoints(state)}
+              <!-- -- -->
+            </g>
+          </svg>
+          ${drawToolbar(state)}
+        </div>
+
+        <div
+          class="w-64 border-l border-gray-400 p-4 bg-gray-300 shadow-[-0.25rem_0_0.5rem_rgba(0,0,0,0.1)]"
         >
-          <g transform-group>
-            ${drawSelectBox(state)}
-            <!-- -- -->
-            ${drawLines(state)}
-            <!-- -- -->
-            ${drawTempLine(state)}
-            <!-- -- -->
-            ${drawPoints(state)}
-            <!-- -- -->
-          </g>
-        </svg>
-        <div class="flex flex-row mt-4 space-x-2 justify-between">
-          <div class="flex space-x-2">
-            <button
-              ?data-active=${state.tool === "SELECT"}
-              @click=${(e) => {
-                state.tool = "SELECT";
-              }}
-              class="data-[active]:bg-indigo-500 data-[active]:text-white hover:bg-indigo-400 bg-gray-400 text-black py-1 px-2 rounded shadow text-sm"
-            >
-              Select (s)
-            </button>
-            <button
-              ?data-active=${state.tool === "DRAW"}
-              @click=${(e) => {
-                state.tool = "DRAW";
-              }}
-              class="data-[active]:bg-indigo-500 data-[active]:text-white hover:bg-indigo-400 bg-gray-400 text-black py-1 px-2 rounded shadow text-sm"
-            >
-              Draw (d)
-            </button>
-            <button
-              @click=${(e) => {
-                state.geometries = [];
-                state.params = {};
-              }}
-              class="hover:bg-indigo-400 bg-gray-400 text-black py-1 px-2 rounded shadow text-sm"
-            >
-              Clear
-            </button>
-          </div>
+          Layer Panel
         </div>
       </div>
     </div>

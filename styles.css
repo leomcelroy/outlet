@@ -1,7 +1,9 @@
-html,
+@import "tailwindcss";
+
+/*html,
 body {
     padding: 0px;
     margin: 0px;
     font-family: monospace;
     font-size: 1rem;
-}
+}*/
