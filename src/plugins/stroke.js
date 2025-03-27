@@ -15,12 +15,34 @@ export const stroke = {
           type: "color",
           value: color,
         },
-        // strings
-        // numbers
-        // slider (range)
-        // color
-        // select (dropdown)
-        // boolean (checkbox)
+        {
+          id: "string",
+          type: "string",
+          value: "hello",
+        },
+        {
+          id: "number",
+          type: "number",
+          value: 42,
+        },
+        {
+          id: "slider",
+          type: "slider",
+          value: 50,
+          min: 0,
+          max: 100,
+        },
+        {
+          id: "select",
+          type: "select",
+          value: "option1",
+          options: ["option1", "option2", "option3"],
+        },
+        {
+          id: "boolean",
+          type: "boolean",
+          value: true,
+        },
       ],
     };
   },

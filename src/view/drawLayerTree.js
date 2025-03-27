@@ -20,7 +20,7 @@ export function drawLayerTree(state) {
 
 function renderLayerTree(tree, state) {
   return tree.map((node) => {
-    const isExpanded = state.expandedLayers?.includes(node.id) ?? true;
+    const isExpanded = state.expandedLayers?.includes(node.id) ?? false;
     const isActive = state.activeLayer === node.id;
 
     return html`

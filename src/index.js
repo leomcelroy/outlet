@@ -16,6 +16,8 @@ import { view } from "./view/view.js";
 import { fill } from "./plugins/fill.js";
 import { stroke } from "./plugins/stroke.js";
 import { testDup } from "./plugins/testDup.js";
+import { evaluateAllLayers } from "./evaluateAllLayers.js";
+
 export const STATE = {
   tool: "SELECT",
   params: {},
@@ -57,6 +59,7 @@ export const STATE = {
   lineStart: null,
   selectBox: null,
   activeLayer: "DEFAULT_LAYER",
+  openPluginModal: null,
   plugins: [fill, stroke, testDup],
   dispatch(args) {
     const { type } = args;
@@ -95,6 +98,25 @@ export const STATE = {
         break;
       }
       case "OPEN_PLUGIN_MODAL": {
+        const { pluginId } = args;
+        STATE.openPluginModal = pluginId;
+
+        break;
+      }
+      case "UPDATE_PLUGIN_CONTROL": {
+        const { pluginId, controlId, value } = args;
+        const layer = STATE.layers.find(
+          (layer) => layer.id === STATE.activeLayer
+        );
+        const plugin = layer.plugins.find((plugin) => plugin.id === pluginId);
+        const control = plugin.controls.find(
+          (control) => control.id === controlId
+        );
+        if (control) {
+          control.value = value;
+          evaluateAllLayers();
+        }
+
         break;
       }
       default:
