@@ -54,22 +54,17 @@ export const STATE = {
   lineStart: null,
   selectBox: null,
   activeLayer: "DEFAULT_LAYER",
-  plugins: [
-    fill,
-    stroke
-  ],
+  plugins: [fill, stroke],
   dispatch(args) {
     const { type } = args;
 
     switch (type) {
-      case "SET_ACTIVE_LAYER":
-      {
+      case "SET_ACTIVE_LAYER": {
         const { layerId } = args;
         STATE.activeLayer = layerId;
         break;
       }
-      case "TOGGLE_LAYER": 
-      {
+      case "TOGGLE_LAYER": {
         const { layerId } = args;
         if (!STATE.expandedLayers) {
           STATE.expandedLayers = [];
@@ -82,25 +77,27 @@ export const STATE = {
         }
         break;
       }
-      case "ADD_LAYER":
-      {
+      case "ADD_LAYER": {
         const newId = `LAYER_${STATE.layers.length + 1}`;
         STATE.layers.push({
           id: newId,
           name: `Layer ${STATE.layers.length + 1}`,
           parent: null,
           children: [],
-          plugins: [stroke({ color: "green" })],
+          plugins: [],
           attributes: {},
-          currentGeometry: []
+          currentGeometry: [],
         });
+        break;
+      }
+      case "OPEN_PLUGIN_MODAL": {
         break;
       }
       default:
         console.log("Unknown event:", type);
         break;
     }
-  }
+  },
 };
 
 export function patchState(callback = null) {

@@ -4,12 +4,12 @@ import { evaluateAllLayers } from "../evaluateAllLayers.js";
 export function addCaching(state) {
   // Load initial state from session storage
   const cachedState = sessionStorage.getItem("sketchState");
-  // if (cachedState) {
-  //   const newState = JSON.parse(cachedState);
-  //   for (const key in newState) {
-  //     state[key] = newState[key];
-  //   }
-  // }
+  if (cachedState) {
+    const newState = JSON.parse(cachedState);
+    for (const key in newState) {
+      state[key] = newState[key];
+    }
+  }
   evaluateAllLayers()
 
 

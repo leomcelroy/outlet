@@ -28,6 +28,23 @@ export function drawToolbar(state) {
           @click=${(e) => {
             state.geometries = [];
             state.params = {};
+
+            const file = JSON.stringify({
+              geometries: state.geometries,
+              params: state.params,
+              layers: [
+                {
+                  id: "DEFAULT_LAYER",
+                  name: "Default Layer",
+                  parent: null,
+                  children: ["LAYER_1"],
+                  plugins: [],
+                  attributes: {},
+                  currentGeometry: [],
+                },
+              ],
+            });
+            sessionStorage.setItem("sketchState", file);
           }}
           class="hover:bg-indigo-400 bg-gray-400 text-black py-1 px-2 rounded shadow text-sm"
         >
