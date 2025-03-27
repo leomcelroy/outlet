@@ -16,6 +16,7 @@ import { view } from "./view/view.js";
 import { fill } from "./plugins/fill.js";
 import { stroke } from "./plugins/stroke.js";
 import { testDup } from "./plugins/testDup.js";
+import { evaluateAllLayers } from "./evaluateAllLayers.js";
 
 export const STATE = {
   tool: "SELECT",

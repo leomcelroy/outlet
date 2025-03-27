@@ -10,7 +10,7 @@ export function evaluateAllLayers() {
   const parentLayers = STATE.layers.filter((layer) => layer.parent === null);
   parentLayers.forEach((layer) => evaluateLayer(layer));
 
-  patchState();
+  console.log(STATE.layers);
 }
 
 function evaluateLayer(layer) {
@@ -62,19 +62,15 @@ function evaluateLayer(layer) {
   );
 
   // Apply plugins after all geometry is collected
-  if (layer.plugins) {
-    layer.plugins.forEach((plugin) => {
-      const controlValues = {};
-      plugin.controls.forEach((control) => {
-        controlValues[control.id] = control.value;
-      });
+  layer.outputGeometry = layer.plugins
+    .reduce((acc, plugin) => {
+      const controlValues = plugin.controls.reduce((cvAcc, control) => {
+        cvAcc[control.id] = control.value;
+        return cvAcc;
+      }, {});
 
       const process = STATE.plugins.find((x) => x.type === plugin.type).process;
-      layer.outputGeometry = process(
-        controlValues,
-        layer.inputGeometry,
-        layer.attributes
-      );
-    });
-  }
+      return [process(controlValues, acc, layer.attributes)];
+    }, positionedGeometry)
+    .flat();
 }
