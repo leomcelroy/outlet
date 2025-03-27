@@ -13,15 +13,94 @@ import { hitEsc } from "./utils/hitEsc.js";
 
 import { view } from "./view/view.js";
 
-const STATE = {
-  tool: "DRAW",
+import { fill } from "./plugins/fill.js";
+import { stroke } from "./plugins/stroke.js";
+
+export const STATE = {
+  tool: "SELECT",
   params: {},
   selectedGeometry: new Set(),
   geometries: [],
+  layers: [
+    {
+      id: "DEFAULT_LAYER",
+      name: "Default Layer",
+      parent: null,
+      children: ["LAYER_1"],
+      plugins: [stroke.init({ color: "red" })],
+      attributes: {},
+      currentGeometry: [],
+    },
+    {
+      id: "LAYER_1",
+      name: "Layer 1",
+      parent: "DEFAULT_LAYER",
+      children: [],
+      plugins: [stroke.init({ color: "black" })],
+      attributes: {},
+      currentGeometry: [],
+    },
+    {
+      id: "LAYER_2",
+      name: "Layer 2",
+      parent: null,
+      children: [],
+      plugins: [stroke.init({ color: "green" })],
+      attributes: {},
+      currentGeometry: [],
+    },
+  ],
   currentPoint: null,
   lineStart: null,
   selectBox: null,
-  plugIns: [],
+  activeLayer: "DEFAULT_LAYER",
+  plugins: [
+    fill,
+    stroke
+  ],
+  dispatch(args) {
+    const { type } = args;
+
+    switch (type) {
+      case "SET_ACTIVE_LAYER":
+      {
+        const { layerId } = args;
+        STATE.activeLayer = layerId;
+        break;
+      }
+      case "TOGGLE_LAYER": 
+      {
+        const { layerId } = args;
+        if (!STATE.expandedLayers) {
+          STATE.expandedLayers = [];
+        }
+        const index = STATE.expandedLayers.indexOf(layerId);
+        if (index === -1) {
+          STATE.expandedLayers.push(layerId);
+        } else {
+          STATE.expandedLayers.splice(index, 1);
+        }
+        break;
+      }
+      case "ADD_LAYER":
+      {
+        const newId = `LAYER_${STATE.layers.length + 1}`;
+        STATE.layers.push({
+          id: newId,
+          name: `Layer ${STATE.layers.length + 1}`,
+          parent: null,
+          children: [],
+          plugins: [stroke({ color: "green" })],
+          attributes: {},
+          currentGeometry: []
+        });
+        break;
+      }
+      default:
+        console.log("Unknown event:", type);
+        break;
+    }
+  }
 };
 
 export function patchState(callback = null) {

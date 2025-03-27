@@ -1,5 +1,6 @@
 import { patchState } from "../index.js";
 import { createListener } from "../utils/createListener.js";
+import { evaluateAllLayers } from "../evaluateAllLayers.js";
 
 export function addPtDragging(el, state) {
   function getPoint(e) {
@@ -83,6 +84,7 @@ export function addPtDragging(el, state) {
     // const getIndex = (id) => Object.keys(state.params).indexOf(id);
 
     patchState();
+    evaluateAllLayers();
   });
 
   listener("mouseup", "", (e) => {

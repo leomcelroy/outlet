@@ -1,5 +1,6 @@
 import { createListener } from "../utils/createListener.js";
 import { createRandStr } from "../utils/createRandStr.js";
+import { evaluateAllLayers } from "../evaluateAllLayers.js";
 
 export function addSketching(el, state) {
   const listener = createListener(el);
@@ -35,6 +36,7 @@ export function addSketching(el, state) {
     } else {
       addLine(lineStart, pointId);
       reset();
+      evaluateAllLayers();
     }
   });
 
@@ -61,6 +63,7 @@ export function addSketching(el, state) {
       type: "point",
       x: xId,
       y: yId,
+      layer: state.activeLayer,
     };
 
     state.geometries.push(p);
@@ -75,6 +78,7 @@ export function addSketching(el, state) {
       type: "line",
       p1: startId,
       p2: endId,
+      layer: state.activeLayer,
     };
 
     state.geometries.push(line);
