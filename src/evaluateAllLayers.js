@@ -69,13 +69,10 @@ function evaluateLayer(layer) {
         controlValues[control.id] = control.value;
       });
 
-      // Flatten the geometry array for plugin processing
-      console.log({ plugins: STATE.plugins, plugin });
       const process = STATE.plugins.find((x) => x.type === plugin.type).process;
-
       layer.outputGeometry = process(
         controlValues,
-        positionedGeometry,
+        layer.inputGeometry,
         layer.attributes
       );
     });
