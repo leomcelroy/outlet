@@ -1,4 +1,5 @@
 import { html } from "lit-html";
+import { stroke } from "../plugins/stroke.js";
 
 export function drawToolbar(state) {
   return html`
@@ -38,7 +39,7 @@ export function drawToolbar(state) {
                   name: "Default Layer",
                   parent: null,
                   children: ["LAYER_1"],
-                  plugins: [],
+                  plugins: [stroke.init()],
                   attributes: {},
                   currentGeometry: [],
                 },

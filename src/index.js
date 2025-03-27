@@ -84,7 +84,7 @@ export const STATE = {
           name: `Layer ${STATE.layers.length + 1}`,
           parent: null,
           children: [],
-          plugins: [],
+          plugins: [stroke.init()],
           attributes: {},
           currentGeometry: [],
         });

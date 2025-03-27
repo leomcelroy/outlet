@@ -2,7 +2,7 @@ import { createRandStr } from "../utils/createRandStr.js";
 
 export const fill = {
   type: "fill",
-  init(defaults) {
+  init(defaults = {}) {
     const color = defaults.color ?? "black";
     return {
       id: createRandStr(),

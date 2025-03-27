@@ -2,7 +2,7 @@ import { createRandStr } from "../utils/createRandStr.js";
 
 export const stroke = {
   type: "stroke",
-  init(defaults) {
+  init(defaults = {}) {
     const color = defaults.color ?? "black";
 
     return {
