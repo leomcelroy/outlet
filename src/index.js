@@ -15,7 +15,7 @@ import { view } from "./view/view.js";
 
 import { fill } from "./plugins/fill.js";
 import { stroke } from "./plugins/stroke.js";
-
+import { testDup } from "./plugins/testDup.js";
 export const STATE = {
   tool: "SELECT",
   params: {},
@@ -47,7 +47,7 @@ export const STATE = {
       name: "Layer 2",
       parent: null,
       children: [],
-      plugins: [stroke.init({ color: "green" })],
+      plugins: [testDup.init({ offset: 1 })],
       attributes: {},
       outputGeometry: [],
       inputGeometry: [],
@@ -57,7 +57,7 @@ export const STATE = {
   lineStart: null,
   selectBox: null,
   activeLayer: "DEFAULT_LAYER",
-  plugins: [fill, stroke],
+  plugins: [fill, stroke, testDup],
   dispatch(args) {
     const { type } = args;
 
@@ -87,7 +87,7 @@ export const STATE = {
           name: `Layer ${STATE.layers.length + 1}`,
           parent: null,
           children: [],
-          plugins: [stroke.init()],
+          plugins: [testDup.init({ offset: 1 })],
           attributes: {},
           outputGeometry: [],
           inputGeometry: [],

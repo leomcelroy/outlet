@@ -35,6 +35,32 @@ function evaluateLayer(layer) {
     });
   }
 
+  const geoMap = {};
+  STATE.geometries.forEach((geo) => {
+    geoMap[geo.id] = geo;
+  });
+
+  const positionedGeometry = layer.inputGeometry.map((parent) =>
+    parent.map((g) => {
+      switch (g.type) {
+        case "point":
+          return {
+            ...g,
+            x: STATE.params[g.x],
+            y: STATE.params[g.y],
+          };
+        case "line":
+          return {
+            ...g,
+            x1: STATE.params[geoMap[g.p1].x],
+            y1: STATE.params[geoMap[g.p1].y],
+            x2: STATE.params[geoMap[g.p2].x],
+            y2: STATE.params[geoMap[g.p2].y],
+          };
+      }
+    })
+  );
+
   // Apply plugins after all geometry is collected
   if (layer.plugins) {
     layer.plugins.forEach((plugin) => {
@@ -46,7 +72,12 @@ function evaluateLayer(layer) {
       // Flatten the geometry array for plugin processing
       console.log({ plugins: STATE.plugins, plugin });
       const process = STATE.plugins.find((x) => x.type === plugin.type).process;
-      layer.outputGeometry = process(controlValues, layer.inputGeometry, layer.attributes);
+
+      layer.outputGeometry = process(
+        controlValues,
+        positionedGeometry,
+        layer.attributes
+      );
     });
   }
 }
