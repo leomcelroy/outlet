@@ -29,22 +29,23 @@ export function drawToolbar(state) {
           @click=${(e) => {
             state.geometries = [];
             state.params = {};
+            state.layers = [
+              {
+                id: "DEFAULT_LAYER",
+                name: "Default Layer",
+                parent: null,
+                children: ["LAYER_1"],
+                plugins: [stroke.init()],
+                attributes: {},
+                outputGeometry: [],
+                inputGeometry: [],
+              },
+            ];
 
             const file = JSON.stringify({
               geometries: state.geometries,
               params: state.params,
-              layers: [
-                {
-                  id: "DEFAULT_LAYER",
-                  name: "Default Layer",
-                  parent: null,
-                  children: ["LAYER_1"],
-                  plugins: [stroke.init()],
-                  attributes: {},
-                  outputGeometry: [],
-                  inputGeometry: [],
-                },
-              ],
+              layers: state.layers,
             });
             sessionStorage.setItem("sketchState", file);
           }}
