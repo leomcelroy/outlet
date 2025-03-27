@@ -41,7 +41,8 @@ export function drawToolbar(state) {
                   children: ["LAYER_1"],
                   plugins: [stroke.init()],
                   attributes: {},
-                  currentGeometry: [],
+                  outputGeometry: [],
+                  inputGeometry: [],
                 },
               ],
             });

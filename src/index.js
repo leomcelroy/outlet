@@ -29,7 +29,8 @@ export const STATE = {
       children: ["LAYER_1"],
       plugins: [stroke.init({ color: "red" })],
       attributes: {},
-      currentGeometry: [],
+      outputGeometry: [],
+      inputGeometry: [],
     },
     {
       id: "LAYER_1",
@@ -38,7 +39,8 @@ export const STATE = {
       children: [],
       plugins: [stroke.init({ color: "black" })],
       attributes: {},
-      currentGeometry: [],
+      outputGeometry: [],
+      inputGeometry: [],
     },
     {
       id: "LAYER_2",
@@ -47,7 +49,8 @@ export const STATE = {
       children: [],
       plugins: [stroke.init({ color: "green" })],
       attributes: {},
-      currentGeometry: [],
+      outputGeometry: [],
+      inputGeometry: [],
     },
   ],
   currentPoint: null,
@@ -86,7 +89,8 @@ export const STATE = {
           children: [],
           plugins: [stroke.init()],
           attributes: {},
-          currentGeometry: [],
+          outputGeometry: [],
+          inputGeometry: [],
         });
         break;
       }

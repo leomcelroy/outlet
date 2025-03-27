@@ -28,5 +28,6 @@ export const stroke = {
   process(controls, children, attributes) {
     const { color } = controls;
     attributes.stroke = color;
+    return children.flat();
   },
 };

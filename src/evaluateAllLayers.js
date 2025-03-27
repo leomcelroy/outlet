@@ -1,9 +1,9 @@
 import { STATE, patchState } from "./index.js";
 
 export function evaluateAllLayers() {
-  // Reset all layers' current geometry
+  // Reset all layers' output geometry
   STATE.layers.forEach((layer) => {
-    layer.currentGeometry = [];
+    layer.outputGeometry = [];
   });
 
   // Process parent layers first (those with no parent)
@@ -20,7 +20,7 @@ function evaluateLayer(layer) {
   );
 
   // Initialize currentGeometry with this layer's geometry
-  layer.currentGeometry = [layerGeometry];
+  layer.inputGeometry = [layerGeometry];
 
   // Recursively process child layers
   if (layer.children && layer.children.length > 0) {
@@ -30,7 +30,7 @@ function evaluateLayer(layer) {
         // Recursively evaluate child layer
         evaluateLayer(childLayer);
         // Add child's currentGeometry array to parent's array
-        layer.currentGeometry.push(...childLayer.currentGeometry);
+        layer.inputGeometry.push(...childLayer.outputGeometry);
       }
     });
   }
@@ -46,7 +46,7 @@ function evaluateLayer(layer) {
       // Flatten the geometry array for plugin processing
       console.log({ plugins: STATE.plugins, plugin });
       const process = STATE.plugins.find((x) => x.type === plugin.type).process;
-      process(controlValues, layer.currentGeometry, layer.attributes);
+      layer.outputGeometry = process(controlValues, layer.inputGeometry, layer.attributes);
     });
   }
 }

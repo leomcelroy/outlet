@@ -28,5 +28,6 @@ export const fill = {
   process(controls, children, attributes) {
     const { color } = controls;
     attributes.fill = color;
+    return children.flat();
   },
 };

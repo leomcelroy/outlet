@@ -64,7 +64,7 @@ function drawLines(state, lines, layer) {
 }
 
 function drawLayer(state, layer) {
-  const flatGeometry = layer.currentGeometry.flat();  
+  const flatGeometry = layer.outputGeometry;  
   return svg`
     <g layer data-layer-id=${layer.id}>
       ${drawLines(state, flatGeometry.filter(x => x.type === "line"), layer)}

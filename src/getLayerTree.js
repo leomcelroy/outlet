@@ -11,7 +11,7 @@ function generateLayerTree(layer, depth = 0) {
     name: layer.name,
     depth,
     children: [],
-    geometry: layer.currentGeometry,
+    geometry: layer.outputGeometry,
     attributes: layer.attributes,
     plugins: layer.plugins
   };
