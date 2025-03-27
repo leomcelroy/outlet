@@ -9,8 +9,6 @@ export function evaluateAllLayers() {
   // Process parent layers first (those with no parent)
   const parentLayers = STATE.layers.filter((layer) => layer.parent === null);
   parentLayers.forEach((layer) => evaluateLayer(layer));
-
-  console.log(STATE.layers);
 }
 
 function evaluateLayer(layer) {

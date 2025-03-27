@@ -88,7 +88,7 @@ export function drawPlugins(state) {
                           type: "UPDATE_PLUGIN_CONTROL",
                           pluginId: plugin.id,
                           controlId: control.id,
-                          value: e.target.value,
+                          value: Number(e.target.value),
                         })}
                       class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 sm:text-sm px-2 py-1"
                     />
@@ -113,7 +113,7 @@ export function drawPlugins(state) {
                           type: "UPDATE_PLUGIN_CONTROL",
                           pluginId: plugin.id,
                           controlId: control.id,
-                          value: e.target.value,
+                          value: Number(e.target.value),
                         })}
                       class="mt-1 block w-full"
                     />
