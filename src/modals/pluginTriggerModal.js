@@ -194,7 +194,7 @@ export function pluginTriggerModal(plugin, layer) {
                 // Execute the plugin with the collected control values
                 process(
                   controlValues,
-                  [activeLayer.outputGeometry],
+                  layer.inputGeometry,
                   activeLayer.attributes
                 );
 

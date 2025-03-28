@@ -139,7 +139,10 @@ export const STATE = {
         break;
       }
       case "SET_LAYER_NAME": {
-        const { layerId, name } = args;
+        let { layerId, name } = args;
+        if (name.length === 0) {
+          name = "ANON";
+        }
         const layer = STATE.layers.find((layer) => layer.id === layerId);
         layer.name = name;
         break;
