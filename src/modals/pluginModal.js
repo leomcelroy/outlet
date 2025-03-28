@@ -1,4 +1,5 @@
 import { STATE } from "../index.js";
+import { evaluateAllLayers } from "../evaluateAllLayers.js";
 import { html, render } from "lit-html";
 
 export function pluginModal() {
@@ -57,9 +58,14 @@ export function pluginModal() {
                       console.log("plugin triggered", plugin, activeLayer);
 
                       if (plugin.applyOnce) {
-                        plugin.process();
+                        plugin.process(
+                          {},
+                          [activeLayer.outputGeometry],
+                          activeLayer.attributes
+                        );
                       } else {
                         activeLayer.plugins.push(plugin.init());
+                        evaluateAllLayers();
                       }
 
                       container.remove();
