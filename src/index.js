@@ -127,6 +127,12 @@ export const STATE = {
 
         break;
       }
+      case "SET_LAYER_NAME": {
+        const { layerId, name } = args;
+        const layer = STATE.layers.find((layer) => layer.id === layerId);
+        layer.name = name;
+        break;
+      }
       // case "TRIGGER_PLUGIN": {
       //   const { pluginId } = args;
       //   const layer = STATE.layers.find(

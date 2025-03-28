@@ -8,8 +8,7 @@ export function drawLayerTree(state) {
         <div class="text-lg font-bold">Layers</div>
         <button
           @click=${() => state.dispatch({ type: "ADD_LAYER" })}
-          class="px-2 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
+          class="px-2 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600">
           + New Layer
         </button>
       </div>
@@ -34,8 +33,7 @@ function renderLayerTree(tree, state) {
                 type: "TOGGLE_LAYER",
                 layerId: node.id,
               })}
-            class="mx-1 w-3 h-3 text-xs rounded-xs hover:bg-gray-200 cursor-pointer"
-          >
+            class="mx-1 w-3 h-3 text-xs rounded-xs hover:bg-gray-200 cursor-pointer">
             ${isExpanded ? "▼" : "▶"}
           </button>
 
@@ -45,7 +43,34 @@ function renderLayerTree(tree, state) {
               : ""} w-full block cursor-pointer"
             @click=${() =>
               state.dispatch({ type: "SET_ACTIVE_LAYER", layerId: node.id })}
-            >${node.name}</span
+            @dblclick=${(e) => {
+              const input = document.createElement("input");
+              input.value = node.name;
+              input.className = "w-full px-2 py-0 border rounded";
+
+              const span = e.target;
+              span.replaceWith(input);
+              input.focus();
+
+              input.addEventListener("blur", () => {
+                state.dispatch({
+                  type: "SET_LAYER_NAME",
+                  layerId: node.id,
+                  name: input.value,
+                });
+                input.replaceWith(span);
+              });
+
+              input.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                  input.blur();
+                }
+                if (e.key === "Escape") {
+                  input.replaceWith(span);
+                }
+              });
+            }}>
+            ${node.name}</span
           >
         </div>
 
