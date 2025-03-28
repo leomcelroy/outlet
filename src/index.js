@@ -65,6 +65,10 @@ export const STATE = {
   selectBox: null,
   activeLayer: "DEFAULT_LAYER",
   openPluginModal: null,
+  gridSize: 10,
+  grid: true,
+  adaptiveGrid: true,
+  panZoomMethods: null,
   plugins: [fill, stroke, testDup, exportPes],
   dispatch(args) {
     const { type } = args;
@@ -202,7 +206,9 @@ export function init() {
 
   const sketchBoard = document.querySelector("[sketch-board]");
 
-  addPanZoom(sketchBoard);
+  const panZoomMethods = addPanZoom(sketchBoard);
+  state.panZoomMethods = panZoomMethods;
+
   addSketching(sketchBoard, state);
   addPtDragging(sketchBoard, state);
   addLineSelection(sketchBoard, state);
@@ -217,6 +223,25 @@ export function init() {
         state.selectedGeometry.add(g.id);
       }
     });
+  });
+
+  sketchBoard.addEventListener("wheel", () => {
+    function getBaseLog(x, y) {
+      return Math.log(y) / Math.log(x);
+    }
+
+    if (!state.panZoomMethods) return;
+
+    const corners = state.panZoomMethods.corners();
+
+    const xLimits = [corners.lt[0], corners.rt[0]];
+    const xRange = Math.abs(xLimits[1] - xLimits[0]);
+    const yLimits = [corners.lb[1], corners.lt[1]];
+    const yRange = Math.abs(yLimits[1] - yLimits[0]);
+
+    const order = Math.round(getBaseLog(5, Math.max(xRange, yRange)));
+    const stepSize = state.adaptiveGrid ? 5 ** order / 20 : state.gridSize;
+    state.gridSize = stepSize;
   });
 
   addDropUpload((file) => {
