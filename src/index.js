@@ -67,7 +67,7 @@ export const STATE = {
   openPluginModal: null,
   gridSize: 10,
   grid: true,
-  adaptiveGrid: false,
+  adaptiveGrid: true,
   panZoomMethods: null,
   plugins: [fill, stroke, testDup, exportPes],
   dispatch(args) {
@@ -205,26 +205,6 @@ export const STATE = {
 
         return { ...STATE };
       }
-      // case "TRIGGER_PLUGIN": {
-      //   const { pluginId } = args;
-      //   const layer = STATE.layers.find(
-      //     (layer) => layer.id === STATE.activeLayer
-      //   );
-      //   const plugin = layer.plugins.find((plugin) => plugin.id === pluginId);
-
-      //   const controlValues = plugin.controls.reduce((cvAcc, control) => {
-      //     cvAcc[control.id] = control.value;
-      //     return cvAcc;
-      //   }, {});
-
-      //   const process = STATE.plugins.find(
-      //     (x) => x.type === plugin.type
-      //   ).process;
-
-      //   process(controlValues, [layer.outputGeometry], layer.attributes);
-
-      //   break;
-      // }
       default:
         console.log("Unknown event:", type);
         break;
@@ -293,8 +273,13 @@ export function init() {
     const yLimits = [corners.lb[1], corners.lt[1]];
     const yRange = Math.abs(yLimits[1] - yLimits[0]);
 
-    const order = Math.round(getBaseLog(5, Math.max(xRange, yRange)));
-    const stepSize = state.adaptiveGrid ? 5 ** order / 20 : state.gridSize;
+    // Calculate a reasonable grid size based on the current zoom level
+    const order = Math.round(getBaseLog(10, Math.max(xRange, yRange)));
+    // Use powers of 10 for more intuitive scaling (1, 10, 100, etc.)
+    // Divide by 10 to get more reasonable intermediate values
+    const stepSize = state.adaptiveGrid
+      ? Math.max(1, 10 ** order / 10)
+      : state.gridSize;
     state.gridSize = stepSize;
   });
 
@@ -325,6 +310,7 @@ export function init() {
 
     if (e.key === "Backspace") {
       deleteGeometry(state);
+      evaluateAllLayers();
     }
   });
 }

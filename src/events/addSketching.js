@@ -106,11 +106,26 @@ export function addSketching(el, state) {
 
     const closestPoint = findClosestPoint(points, [x, y]);
 
+    // If we're close to a point, prioritize snapping to it
+    if (closestPoint && closestPoint.distance < 5) {
+      return {
+        x,
+        y,
+        overlap: closestPoint.id,
+      };
+    }
+
+    // If grid is enabled and we're not near a point, snap to grid
+    if (state.grid) {
+      const stepSize = state.gridSize;
+      x = Math.round(x / stepSize) * stepSize;
+      y = Math.round(y / stepSize) * stepSize;
+    }
+
     return {
       x,
       y,
-      overlap:
-        closestPoint && closestPoint.distance < 5 ? closestPoint.id : null,
+      overlap: null,
     };
   }
 }

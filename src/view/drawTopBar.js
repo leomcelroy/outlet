@@ -5,7 +5,7 @@ import { patchState } from "../index.js";
 export function drawTopBar(state) {
   return html`
     <div
-      class="bg-gray-100 border-b border-gray-400 shadow-md flex items-center"
+      class="bg-gray-100 border-b border-gray-400 shadow-md flex items-center cursor-default"
     >
       <div
         @click=${(e) => {
