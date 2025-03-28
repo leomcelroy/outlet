@@ -1,1 +1,9 @@
-
+- add plugins
+- delete plugins
+- rename layers
+- bezier drawing
+- remove plugin panel
+- add plugin search
+- add measure sides
+- add grid
+- add snap to grid
