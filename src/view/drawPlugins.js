@@ -4,9 +4,7 @@ export function drawPlugins(state) {
   const activeLayer = state.layers.find((l) => l.id === state.activeLayer);
   const plugins = activeLayer.plugins.map(
     (plugin) => html`
-      <div
-        class="plugin-item flex flex-col border-b border-gray-200 relative mb-4"
-      >
+      <div class="plugin-item flex flex-col border-b border-gray-200 relative">
         <div class="flex items-center justify-between p-2">
           <span class="plugin-name text-sm font-semibold text-gray-800">
             ${plugin.name}
@@ -25,8 +23,8 @@ export function drawPlugins(state) {
         <div
           class="max-w-full bg-white shadow-md m-2 p-2 rounded-md ${state.openPluginModal ===
           plugin.id
-            ? "max-h-screen opacity-100"
-            : "max-h-0 opacity-0 overflow-hidden"}"
+            ? ""
+            : "hidden"}"
         >
           ${plugin.controls.map((control) => {
             switch (control.type) {
@@ -179,20 +177,6 @@ export function drawPlugins(state) {
                 return html``;
             }
           })}
-          ${false && plugin.triggered === true
-            ? html`
-                <button
-                  @click=${() =>
-                    state.dispatch({
-                      type: "TRIGGER_PLUGIN",
-                      pluginId: plugin.id,
-                    })}
-                  class="px-2 py-1 mt-2 text-sm bg-green-500 text-white rounded hover:bg-green-600"
-                >
-                  Trigger
-                </button>
-              `
-            : ""}
         </div>
       </div>
     `
