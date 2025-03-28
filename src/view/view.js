@@ -25,6 +25,10 @@ export function view(state) {
             </g>
           </svg>
           ${drawToolbar(state)}
+          <div
+            modal-controls-container
+            class="absolute bottom-0 right-0 z-10"
+          ></div>
         </div>
         <div
           class="flex flex-col max-h-full h-full overflow-hidden w-80 border-l border-gray-400 p-2 bg-gray-300 shadow-[-0.25rem_0_0.5rem_rgba(0,0,0,0.1)]"

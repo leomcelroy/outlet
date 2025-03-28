@@ -2,7 +2,7 @@ import { STATE } from "../index.js";
 import { evaluateAllLayers } from "../evaluateAllLayers.js";
 import { html, render } from "lit-html";
 
-export function pluginModal() {
+export function pluginSearch() {
   // Create a container div and append it to the body
   const container = document.createElement("div");
   document.body.appendChild(container);

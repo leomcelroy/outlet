@@ -4,6 +4,7 @@ export function evaluateAllLayers() {
   // Reset all layers' output geometry
   STATE.layers.forEach((layer) => {
     layer.outputGeometry = [];
+    layer.attributes = {};
   });
 
   // Process parent layers first (those with no parent)
