@@ -67,7 +67,7 @@ export const STATE = {
   openPluginModal: null,
   gridSize: 10,
   grid: true,
-  adaptiveGrid: true,
+  adaptiveGrid: false,
   panZoomMethods: null,
   plugins: [fill, stroke, testDup, exportPes],
   dispatch(args) {
