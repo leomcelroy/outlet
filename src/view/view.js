@@ -6,6 +6,7 @@ import { drawLayers } from "./drawLayers.js";
 import { drawTempLine } from "./drawTempLine.js";
 import { drawLayerTree } from "./drawLayerTree.js";
 import { drawPlugins } from "./drawPlugins.js";
+import { drawGrid } from "./drawGrid.js";
 
 export function view(state) {
   return html`
@@ -15,6 +16,15 @@ export function view(state) {
       <div class="flex flex-1 overflow-hidden">
         <div class="relative flex-1">
           <svg sketch-board class="w-[100%] h-[100%]">
+            ${state.panZoomMethods && state.gridSize > 0 && state.grid
+              ? drawGrid(
+                  state.panZoomMethods.x(),
+                  state.panZoomMethods.y(),
+                  state.panZoomMethods.scale(),
+                  state.panZoomMethods.corners(),
+                  state.gridSize
+                )
+              : ""}
             <g transform-group>
               ${drawSelectBox(state)}
               <!-- -- -->

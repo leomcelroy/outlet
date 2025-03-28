@@ -42,11 +42,11 @@ export function pluginTriggerModal(plugin, layer) {
         }}
       >
         <div
-          class="bg-white p-6 rounded shadow-md w-full max-w-md relative flex flex-col"
+          class="bg-white p-3 rounded shadow-md w-full max-w-md relative flex flex-col"
           style="margin-top: 0; transform: translateY(0);"
         >
           <h3 class="text-lg font-bold mb-4">${plugin.name}</h3>
-          <div class="overflow-y-auto max-h-[60vh]" style="min-height: 200px;">
+          <div class="overflow-y-auto max-h-[60vh]">
             ${plugin.controls.map((control) => {
               switch (control.type) {
                 case "color":
@@ -194,7 +194,7 @@ export function pluginTriggerModal(plugin, layer) {
                 // Execute the plugin with the collected control values
                 process(
                   controlValues,
-                  [activeLayer.outputGeometry],
+                  layer.inputGeometry,
                   activeLayer.attributes
                 );
 
