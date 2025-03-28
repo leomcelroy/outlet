@@ -20,6 +20,8 @@ import { exportPes } from "./plugins/exportPes.js";
 
 import { evaluateAllLayers } from "./evaluateAllLayers.js";
 
+import { pluginModal } from "./modals/pluginModal.js";
+
 export const STATE = {
   tool: "SELECT",
   params: {},
@@ -103,6 +105,10 @@ export const STATE = {
         const { pluginId } = args;
         STATE.openPluginModal = pluginId;
 
+        break;
+      }
+      case "ADD_PLUGIN": {
+        pluginModal();
         break;
       }
       case "UPDATE_PLUGIN_CONTROL": {
