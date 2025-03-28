@@ -23,7 +23,7 @@ export function drawPlugins(state) {
           </button>
         </div>
         <div
-          class="w-full bg-white shadow-md p-4 rounded-md ${state.openPluginModal ===
+          class="max-w-full bg-white shadow-md m-2 p-2 rounded-md ${state.openPluginModal ===
           plugin.id
             ? "max-h-screen opacity-100"
             : "max-h-0 opacity-0 overflow-hidden"}"
@@ -32,7 +32,7 @@ export function drawPlugins(state) {
             switch (control.type) {
               case "color":
                 return html`
-                  <div class="flex items-center space-x-2 mb-2">
+                  <div class="flex items-center justify-between mb-2">
                     <span class="text-sm font-medium text-gray-700">Color</span>
                     <input
                       type="color"
@@ -50,10 +50,10 @@ export function drawPlugins(state) {
                 `;
               case "string":
                 return html`
-                  <div class="mb-2">
+                  <div class="flex items-center justify-between mb-2">
                     <label
                       for="string-${control.id}"
-                      class="block text-sm font-medium text-gray-700"
+                      class="text-sm font-medium text-gray-700"
                       >String</label
                     >
                     <input
@@ -67,16 +67,16 @@ export function drawPlugins(state) {
                           controlId: control.id,
                           value: e.target.value,
                         })}
-                      class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 sm:text-sm px-2 py-1"
+                      class="border border-gray-300 rounded-md shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 sm:text-sm px-2 py-1 w-3/5"
                     />
                   </div>
                 `;
               case "number":
                 return html`
-                  <div class="mb-2">
+                  <div class="flex items-center justify-between mb-2">
                     <label
                       for="number-${control.id}"
-                      class="block text-sm font-medium text-gray-700"
+                      class="text-sm font-medium text-gray-700"
                       >Number</label
                     >
                     <input
@@ -90,16 +90,16 @@ export function drawPlugins(state) {
                           controlId: control.id,
                           value: Number(e.target.value),
                         })}
-                      class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 sm:text-sm px-2 py-1"
+                      class="border border-gray-300 rounded-md shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 sm:text-sm px-2 py-1 w-3/5"
                     />
                   </div>
                 `;
               case "slider":
                 return html`
-                  <div class="mb-2">
+                  <div class="flex items-center justify-between mb-2">
                     <label
                       for="slider-${control.id}"
-                      class="block text-sm font-medium text-gray-700"
+                      class="text-sm font-medium text-gray-700"
                       >Slider</label
                     >
                     <input
@@ -115,16 +115,16 @@ export function drawPlugins(state) {
                           controlId: control.id,
                           value: Number(e.target.value),
                         })}
-                      class="mt-1 block w-full"
+                      class="w-3/5"
                     />
                   </div>
                 `;
               case "select":
                 return html`
-                  <div class="mb-2">
+                  <div class="flex items-center justify-between mb-2">
                     <label
                       for="select-${control.id}"
-                      class="block text-sm font-medium text-gray-700"
+                      class="text-sm font-medium text-gray-700"
                       >Select</label
                     >
                     <select
@@ -136,7 +136,7 @@ export function drawPlugins(state) {
                           controlId: control.id,
                           value: e.target.value,
                         })}
-                      class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 sm:text-sm px-2 py-1"
+                      class="border border-gray-300 rounded-md shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 sm:text-sm px-2 py-1 w-3/5"
                     >
                       ${control.options.map(
                         (option) => html`
@@ -153,7 +153,13 @@ export function drawPlugins(state) {
                 `;
               case "boolean":
                 return html`
-                  <div class="mb-2 flex items-center">
+                  <div class="flex items-center justify-between mb-2">
+                    <label
+                      for="boolean-${control.id}"
+                      class="text-sm font-medium text-gray-700"
+                    >
+                      ${control.id}
+                    </label>
                     <input
                       id="boolean-${control.id}"
                       type="checkbox"
@@ -167,29 +173,45 @@ export function drawPlugins(state) {
                           value: e.target.checked,
                         })}
                     />
-                    <label
-                      for="boolean-${control.id}"
-                      class="ml-3 text-sm font-medium text-gray-700"
-                    >
-                      ${control.id}
-                    </label>
                   </div>
                 `;
               default:
                 return html``;
             }
           })}
+          ${false && plugin.triggered === true
+            ? html`
+                <button
+                  @click=${() =>
+                    state.dispatch({
+                      type: "TRIGGER_PLUGIN",
+                      pluginId: plugin.id,
+                    })}
+                  class="px-2 py-1 mt-2 text-sm bg-green-500 text-white rounded hover:bg-green-600"
+                >
+                  Trigger
+                </button>
+              `
+            : ""}
         </div>
       </div>
     `
   );
 
   return html`
-    <div class="max-h-[40%] p-4">
-      <div class="text-lg font-bold mt-4 mb-2 text-gray-800">
-        Active Layer Plugins
+    <div class="flex flex-col flex-1 w-full overflow-hidden mt-3">
+      <div class="flex justify-between items-center mb-4">
+        <div class="text-lg font-bold">Active Layer Plugins</div>
+        <button
+          @click=${() => state.dispatch({ type: "ADD_PLUGIN" })}
+          class="px-2 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          + New Plugin
+        </button>
       </div>
-      ${plugins}
+      <div class="overflow-scroll flex-1 bg-gray-200 rounded w-full">
+        ${plugins}
+      </div>
     </div>
   `;
 }

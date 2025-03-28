@@ -1,13 +1,17 @@
 import { createRandStr } from "../utils/createRandStr.js";
 
+const type = "testDup";
+const name = "Test Dup";
+
 export const testDup = {
-  type: "testDup",
+  type,
+  name,
   init(defaults = {}) {
     const offset = defaults.offset ?? 10;
     return {
       id: createRandStr(),
-      type: "testDup",
-      name: "Test Dup",
+      type,
+      name,
       controls: [
         {
           id: "xOffset",

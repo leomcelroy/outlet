@@ -3,17 +3,19 @@ import { getLayerTree } from "../getLayerTree.js";
 
 export function drawLayerTree(state) {
   return html`
-    <div class="flex justify-between items-center mb-4">
-      <div class="text-lg font-bold">Layers</div>
-      <button
-        @click=${() => state.dispatch({ type: "ADD_LAYER" })}
-        class="px-2 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
-      >
-        + New Layer
-      </button>
-    </div>
-    <div class="max-h-100 overflow-auto bg-gray-200 rounded">
-      ${renderLayerTree(getLayerTree(), state)}
+    <div class="h-1/2 overflow-hidden flex flex-col">
+      <div class="flex justify-between items-center mb-2">
+        <div class="text-lg font-bold">Layers</div>
+        <button
+          @click=${() => state.dispatch({ type: "ADD_LAYER" })}
+          class="px-2 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          + New Layer
+        </button>
+      </div>
+      <div class="flex-1 overflow-auto bg-gray-200 rounded pb-10">
+        ${renderLayerTree(getLayerTree(), state)}
+      </div>
     </div>
   `;
 }

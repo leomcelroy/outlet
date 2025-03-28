@@ -16,6 +16,8 @@ import { view } from "./view/view.js";
 import { fill } from "./plugins/fill.js";
 import { stroke } from "./plugins/stroke.js";
 import { testDup } from "./plugins/testDup.js";
+import { exportPes } from "./plugins/exportPes.js";
+
 import { evaluateAllLayers } from "./evaluateAllLayers.js";
 
 export const STATE = {
@@ -60,7 +62,7 @@ export const STATE = {
   selectBox: null,
   activeLayer: "DEFAULT_LAYER",
   openPluginModal: null,
-  plugins: [fill, stroke, testDup],
+  plugins: [fill, stroke, testDup, exportPes],
   dispatch(args) {
     const { type } = args;
 
@@ -90,7 +92,7 @@ export const STATE = {
           name: `Layer ${STATE.layers.length + 1}`,
           parent: null,
           children: [],
-          plugins: [testDup.init()],
+          plugins: [],
           attributes: {},
           outputGeometry: [],
           inputGeometry: [],
@@ -119,6 +121,26 @@ export const STATE = {
 
         break;
       }
+      // case "TRIGGER_PLUGIN": {
+      //   const { pluginId } = args;
+      //   const layer = STATE.layers.find(
+      //     (layer) => layer.id === STATE.activeLayer
+      //   );
+      //   const plugin = layer.plugins.find((plugin) => plugin.id === pluginId);
+
+      //   const controlValues = plugin.controls.reduce((cvAcc, control) => {
+      //     cvAcc[control.id] = control.value;
+      //     return cvAcc;
+      //   }, {});
+
+      //   const process = STATE.plugins.find(
+      //     (x) => x.type === plugin.type
+      //   ).process;
+
+      //   process(controlValues, [layer.outputGeometry], layer.attributes);
+
+      //   break;
+      // }
       default:
         console.log("Unknown event:", type);
         break;

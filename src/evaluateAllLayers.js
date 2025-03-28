@@ -62,6 +62,8 @@ function evaluateLayer(layer) {
   // Apply plugins after all geometry is collected
   layer.outputGeometry = layer.plugins
     .reduce((acc, plugin) => {
+      // if (plugin.triggered) return acc;
+
       const controlValues = plugin.controls.reduce((cvAcc, control) => {
         cvAcc[control.id] = control.value;
         return cvAcc;

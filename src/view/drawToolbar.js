@@ -41,6 +41,7 @@ export function drawToolbar(state) {
                 inputGeometry: [],
               },
             ];
+            state.activeLayer = "DEFAULT_LAYER";
 
             const file = JSON.stringify({
               geometries: state.geometries,
