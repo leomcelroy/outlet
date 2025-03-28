@@ -1,4 +1,4 @@
-import { html } from "lit-html";
+import { html, svg } from "lit-html";
 import { getLayerTree } from "../getLayerTree.js";
 
 export function drawLayerTree(state) {
@@ -96,7 +96,8 @@ function renderLayerTree(tree, state) {
             "border-t-2",
             "border-b-2"
           );
-        }}>
+        }}
+      >
         <div class="flex items-center">
           <button
             @click=${() =>
@@ -193,7 +194,8 @@ function renderLayerTree(tree, state) {
               position: "after",
             });
           }
-        }}></div>
+        }}
+      ></div>
     `;
   });
 }
