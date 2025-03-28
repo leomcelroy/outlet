@@ -144,6 +144,60 @@ export const STATE = {
         layer.name = name;
         break;
       }
+      case "MOVE_LAYER": {
+        const { sourceId, targetId, position } = args;
+
+        // Find source and target in the tree
+        const sourceInfo = findLayerAndPath(STATE.layers, sourceId);
+        const targetInfo = findLayerAndPath(STATE.layers, targetId);
+
+        if (!sourceInfo || !targetInfo) return STATE;
+
+        // Prevent dropping a parent into its own descendant
+        if (isDescendant(sourceInfo.layer, targetId)) {
+          return STATE;
+        }
+
+        // Remove the source layer from its current position
+        const [movedLayer] = sourceInfo.parentArray.splice(sourceInfo.index, 1);
+
+        if (position === "inside") {
+          // Make it a child of the target
+          targetInfo.layer.children = targetInfo.layer.children || [];
+          targetInfo.layer.children.push(movedLayer);
+
+          // Update the depth of the moved layer and all its children
+          const updateDepth = (layer, newDepth) => {
+            layer.depth = newDepth;
+            if (layer.children) {
+              layer.children.forEach((child) =>
+                updateDepth(child, newDepth + 1)
+              );
+            }
+          };
+          updateDepth(movedLayer, targetInfo.layer.depth + 1);
+        } else {
+          // Insert before or after the target
+          const insertIndex =
+            position === "before" ? targetInfo.index : targetInfo.index + 1;
+
+          targetInfo.parentArray.splice(insertIndex, 0, movedLayer);
+
+          // Update the depth to match siblings
+          const newDepth = targetInfo.layer.depth;
+          const updateDepth = (layer, newDepth) => {
+            layer.depth = newDepth;
+            if (layer.children) {
+              layer.children.forEach((child) =>
+                updateDepth(child, newDepth + 1)
+              );
+            }
+          };
+          updateDepth(movedLayer, newDepth);
+        }
+
+        return { ...STATE };
+      }
       // case "TRIGGER_PLUGIN": {
       //   const { pluginId } = args;
       //   const layer = STATE.layers.find(
@@ -245,4 +299,35 @@ export function init() {
       deleteGeometry(state);
     }
   });
+}
+
+function findLayerAndPath(layers, id, path = []) {
+  for (let i = 0; i < layers.length; i++) {
+    if (layers[i].id === id) {
+      return {
+        layer: layers[i],
+        index: i,
+        path: path,
+        parentArray: layers,
+      };
+    }
+    if (layers[i].children?.length > 0) {
+      const result = findLayerAndPath(layers[i].children, id, [
+        ...path,
+        { layer: layers[i], index: i },
+      ]);
+      if (result) return result;
+    }
+  }
+  return null;
+}
+
+function isDescendant(sourceLayer, targetId) {
+  if (!sourceLayer.children) return false;
+
+  for (const child of sourceLayer.children) {
+    if (child.id === targetId) return true;
+    if (isDescendant(child, targetId)) return true;
+  }
+  return false;
 }

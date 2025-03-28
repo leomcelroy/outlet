@@ -1,4 +1,4 @@
-import { html, svg } from "lit-html";
+import { html } from "lit-html";
 import { getLayerTree } from "../getLayerTree.js";
 
 export function drawLayerTree(state) {
@@ -20,12 +20,82 @@ export function drawLayerTree(state) {
 }
 
 function renderLayerTree(tree, state) {
-  return tree.map((node) => {
+  return tree.map((node, index) => {
     const isExpanded = state.expandedLayers?.includes(node.id) ?? false;
     const isActive = state.activeLayer === node.id;
 
     return html`
-      <div class="pl-${node.depth * 4} border-l-2 border-gray-400 mx-2 my-2">
+      <div
+        class="pl-${node.depth * 4} border-l-2 border-gray-400 mx-2 my-2"
+        draggable="true"
+        @dragstart=${(e) => {
+          e.dataTransfer.setData("application/x-layer", node.id);
+          e.dataTransfer.effectAllowed = "move";
+        }}
+        @dragover=${(e) => {
+          e.preventDefault();
+          if (!e.dataTransfer.types.includes("application/x-layer")) return;
+
+          const rect = e.currentTarget.getBoundingClientRect();
+          const y = e.clientY - rect.top;
+
+          // Clear previous indicators
+          e.currentTarget.classList.remove(
+            "bg-blue-50",
+            "border-t-2",
+            "border-b-2"
+          );
+
+          if (y < rect.height * 0.25) {
+            // Top 25% - insert before
+            e.currentTarget.classList.add("border-t-2");
+          } else if (y > rect.height * 0.75) {
+            // Bottom 25% - insert after
+            e.currentTarget.classList.add("border-b-2");
+          } else {
+            // Middle 50% - make it a child
+            e.currentTarget.classList.add("bg-blue-50");
+          }
+        }}
+        @dragleave=${(e) => {
+          e.currentTarget.classList.remove(
+            "bg-blue-50",
+            "border-t-2",
+            "border-b-2"
+          );
+        }}
+        @drop=${(e) => {
+          e.preventDefault();
+          if (!e.dataTransfer.types.includes("application/x-layer")) return;
+
+          const sourceId = e.dataTransfer.getData("application/x-layer");
+          if (sourceId === node.id) return;
+
+          const rect = e.currentTarget.getBoundingClientRect();
+          const y = e.clientY - rect.top;
+
+          let position;
+          if (y < rect.height * 0.25) {
+            position = "before";
+          } else if (y > rect.height * 0.75) {
+            position = "after";
+          } else {
+            position = "inside";
+          }
+
+          state.dispatch({
+            type: "MOVE_LAYER",
+            sourceId,
+            targetId: node.id,
+            position,
+          });
+
+          e.currentTarget.classList.remove(
+            "bg-blue-50",
+            "border-t-2",
+            "border-b-2"
+          );
+        }}>
         <div class="flex items-center">
           <button
             @click=${() =>
@@ -96,6 +166,29 @@ function renderLayerTree(tree, state) {
             `
           : ""}
       </div>
+      <!-- Add drop zone after each node -->
+      <div
+        class="h-2 mx-2 transition-all"
+        @dragover=${(e) => {
+          e.preventDefault();
+          e.currentTarget.classList.add("bg-blue-200", "h-4");
+        }}
+        @dragleave=${(e) => {
+          e.currentTarget.classList.remove("bg-blue-200", "h-4");
+        }}
+        @drop=${(e) => {
+          e.preventDefault();
+          e.currentTarget.classList.remove("bg-blue-200", "h-4");
+          const sourceId = e.dataTransfer.getData("application/x-layer");
+          if (sourceId !== node.id) {
+            state.dispatch({
+              type: "MOVE_LAYER",
+              sourceId,
+              targetId: node.id,
+              position: "after",
+            });
+          }
+        }}></div>
     `;
   });
 }

@@ -18,6 +18,9 @@ export function addDropUpload(callback, ops = {}) {
   // add drop modal
 
   listener("drop", "", function (evt) {
+    if (evt.dataTransfer.types.includes("application/x-layer")) {
+      return;
+    }
     let dt = evt.dataTransfer;
     let files = dt.files;
 
@@ -29,6 +32,10 @@ export function addDropUpload(callback, ops = {}) {
   });
 
   listener("dragover", "", function (evt) {
+    // Check if this is a layer being dragged
+    if (evt.dataTransfer.types.includes("application/x-layer")) {
+      return;
+    }
     dropScreen.removeAttribute("data-hidden");
     pauseEvent(evt);
   });
