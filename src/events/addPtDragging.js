@@ -65,23 +65,49 @@ export function addPtDragging(el, state) {
 
     const currentPoint = getPoint(e);
 
-    const dx = currentPoint[0] - mousedownPoint[0];
-    const dy = currentPoint[1] - mousedownPoint[1];
+    // Calculate raw delta
+    let dx = currentPoint[0] - mousedownPoint[0];
+    let dy = currentPoint[1] - mousedownPoint[1];
 
+    // Get the clicked point
+    const clickedPt = state.geometries.find(
+      (g) => g.id === clickedPtId && g.type === "point"
+    );
+
+    if (clickedPt) {
+      const clickedXId = clickedPt.x;
+      const clickedYId = clickedPt.y;
+
+      // Calculate new position for clicked point
+      let newClickedX = ogParams[clickedXId] + dx;
+      let newClickedY = ogParams[clickedYId] + dy;
+
+      // Only snap the clicked point if grid is enabled
+      if (state.grid) {
+        const stepSize = state.gridSize;
+        const snappedX = Math.round(newClickedX / stepSize) * stepSize;
+        const snappedY = Math.round(newClickedY / stepSize) * stepSize;
+
+        // Recalculate dx and dy based on the snapped position
+        dx = snappedX - ogParams[clickedXId];
+        dy = snappedY - ogParams[clickedYId];
+      }
+    }
+
+    // Apply the (potentially adjusted) dx and dy to all selected points
     state.selectedGeometry.forEach((id) => {
       const pt = state.geometries.find(
-        (g) => g.id === id && g.type === "point",
+        (g) => g.id === id && g.type === "point"
       );
       if (pt === undefined) return;
 
       const xId = pt.x;
       const yId = pt.y;
+
+      // Apply the same delta to all points
       state.params[xId] = ogParams[xId] + dx;
       state.params[yId] = ogParams[yId] + dy;
     });
-
-    // const pt = state.geometries.find((g) => g.id === clickedPtId);
-    // const getIndex = (id) => Object.keys(state.params).indexOf(id);
 
     patchState();
     evaluateAllLayers();
