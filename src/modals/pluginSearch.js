@@ -1,8 +1,9 @@
 import { STATE } from "../index.js";
 import { evaluateAllLayers } from "../evaluateAllLayers.js";
 import { html, render } from "lit-html";
+import { pluginTriggerModal } from "./pluginTriggerModal.js";
 
-export function pluginModal() {
+export function pluginSearch() {
   // Create a container div and append it to the body
   const container = document.createElement("div");
   document.body.appendChild(container);
@@ -55,20 +56,15 @@ export function pluginModal() {
                       const activeLayer = STATE.layers.find(
                         (layer) => layer.id === STATE.activeLayer
                       );
-                      console.log("plugin triggered", plugin, activeLayer);
+
+                      container.remove();
 
                       if (plugin.applyOnce) {
-                        plugin.process(
-                          {},
-                          [activeLayer.outputGeometry],
-                          activeLayer.attributes
-                        );
+                        pluginTriggerModal(plugin, activeLayer);
                       } else {
                         activeLayer.plugins.push(plugin.init());
                         evaluateAllLayers();
                       }
-
-                      container.remove();
                     }}
                   >
                     ${plugin.applyOnce ? "Trigger" : "Apply"}

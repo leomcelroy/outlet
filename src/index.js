@@ -20,7 +20,8 @@ import { exportPes } from "./plugins/exportPes.js";
 
 import { evaluateAllLayers } from "./evaluateAllLayers.js";
 
-import { pluginModal } from "./modals/pluginModal.js";
+import { pluginSearch } from "./modals/pluginSearch.js";
+import { pluginControlModal } from "./modals/pluginControlModal.js";
 
 export const STATE = {
   tool: "SELECT",
@@ -104,11 +105,21 @@ export const STATE = {
       case "OPEN_PLUGIN_MODAL": {
         const { pluginId } = args;
         STATE.openPluginModal = pluginId;
-
+        if (pluginId) pluginControlModal();
+        break;
+      }
+      case "REMOVE_PLUGIN": {
+        const { pluginId, layerId } = args;
+        const layer = STATE.layers.find((layer) => layer.id === layerId);
+        layer.plugins = layer.plugins.filter(
+          (plugin) => plugin.id !== pluginId
+        );
+        evaluateAllLayers();
+        STATE.openPluginModal = null;
         break;
       }
       case "ADD_PLUGIN": {
-        pluginModal();
+        pluginSearch();
         break;
       }
       case "UPDATE_PLUGIN_CONTROL": {
