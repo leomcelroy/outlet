@@ -154,56 +154,56 @@ export const STATE = {
       case "MOVE_LAYER": {
         const { sourceId, targetId, position } = args;
 
-        // Find source and target in the tree
-        const sourceInfo = findLayerAndPath(STATE.layers, sourceId);
-        const targetInfo = findLayerAndPath(STATE.layers, targetId);
+        const targetLayer = STATE.layers.find((layer) => layer.id === targetId);
+        const targetLayerParent = STATE.layers.find(
+          (layer) => layer.id === targetLayer.parent
+        );
+        const movedLayer = STATE.layers.find((layer) => layer.id === sourceId);
+        const movedLayerParent = STATE.layers.find(
+          (layer) => layer.id === movedLayer.parent
+        );
 
-        if (!sourceInfo || !targetInfo) return STATE;
+        console.log(sourceId);
 
-        // Prevent dropping a parent into its own descendant
-        if (isDescendant(sourceInfo.layer, targetId)) {
-          return STATE;
+        // Remove the moved layer from its parent
+        if (movedLayerParent) {
+          movedLayerParent.children = movedLayerParent.children.filter(
+            (child) => child !== movedLayer.id
+          );
         }
 
-        // Remove the source layer from its current position
-        const [movedLayer] = sourceInfo.parentArray.splice(sourceInfo.index, 1);
+        let targetLayerIndex;
+        if (targetLayerParent) {
+          targetLayerIndex = targetLayerParent.children.indexOf(targetLayer.id);
+        } else {
+          targetLayerIndex = STATE.layers.indexOf(targetLayer);
+        }
 
+        console.log(targetLayerIndex);
         if (position === "inside") {
-          // Make it a child of the target
-          targetInfo.layer.children = targetInfo.layer.children || [];
-          targetInfo.layer.children.push(movedLayer);
-
-          // Update the depth of the moved layer and all its children
-          const updateDepth = (layer, newDepth) => {
-            layer.depth = newDepth;
-            if (layer.children) {
-              layer.children.forEach((child) =>
-                updateDepth(child, newDepth + 1)
-              );
-            }
-          };
-          updateDepth(movedLayer, targetInfo.layer.depth + 1);
+          // Make it a child of the target; we don't care about the index
+          targetLayer.children.push(movedLayer.id);
+          movedLayer.parent = targetLayer.id;
         } else {
           // Insert before or after the target
           const insertIndex =
-            position === "before" ? targetInfo.index : targetInfo.index + 1;
+            position === "before" ? targetLayerIndex : targetLayerIndex + 1;
+          console.log("inserting at", insertIndex);
 
-          targetInfo.parentArray.splice(insertIndex, 0, movedLayer);
-
-          // Update the depth to match siblings
-          const newDepth = targetInfo.layer.depth;
-          const updateDepth = (layer, newDepth) => {
-            layer.depth = newDepth;
-            if (layer.children) {
-              layer.children.forEach((child) =>
-                updateDepth(child, newDepth + 1)
-              );
-            }
-          };
-          updateDepth(movedLayer, newDepth);
+          if (targetLayerParent) {
+            targetLayerParent.children.splice(insertIndex, 0, movedLayer.id);
+            movedLayer.parent = targetLayerParent.id;
+          } else {
+            console.log("no parent");
+            console.log(movedLayer);
+            // If it has no parent, move the top-level layer
+            STATE.layers.splice(insertIndex, 0, movedLayer);
+            movedLayer.parent = null;
+          }
         }
 
-        return { ...STATE };
+        console.log(STATE.layers);
+        break;
       }
       // case "TRIGGER_PLUGIN": {
       //   const { pluginId } = args;
@@ -327,27 +327,6 @@ export function init() {
       deleteGeometry(state);
     }
   });
-}
-
-function findLayerAndPath(layers, id, path = []) {
-  for (let i = 0; i < layers.length; i++) {
-    if (layers[i].id === id) {
-      return {
-        layer: layers[i],
-        index: i,
-        path: path,
-        parentArray: layers,
-      };
-    }
-    if (layers[i].children?.length > 0) {
-      const result = findLayerAndPath(layers[i].children, id, [
-        ...path,
-        { layer: layers[i], index: i },
-      ]);
-      if (result) return result;
-    }
-  }
-  return null;
 }
 
 function isDescendant(sourceLayer, targetId) {

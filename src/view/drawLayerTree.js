@@ -8,8 +8,7 @@ export function drawLayerTree(state) {
         <div class="text-lg font-bold">Layers</div>
         <button
           @click=${() => state.dispatch({ type: "ADD_LAYER" })}
-          class="px-2 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
+          class="px-2 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600">
           + New Layer
         </button>
       </div>
@@ -96,8 +95,7 @@ function renderLayerTree(tree, state) {
             "border-t-2",
             "border-b-2"
           );
-        }}
-      >
+        }}>
         <div class="flex items-center">
           <button
             @click=${() =>
@@ -105,8 +103,7 @@ function renderLayerTree(tree, state) {
                 type: "TOGGLE_LAYER",
                 layerId: node.id,
               })}
-            class="mx-1 w-3 h-3 text-xs rounded-xs hover:bg-gray-200 cursor-pointer"
-          >
+            class="mx-1 w-3 h-3 text-xs rounded-xs hover:bg-gray-200 cursor-pointer">
             ${isExpanded
               ? svg`<svg width="10" height="10" viewBox="0 0 10 10"><path d="M1,3 L9,3 L5,8 Z" fill="currentColor"/></svg>`
               : svg`<svg width="10" height="10" viewBox="0 0 10 10"><path d="M3,1 L8,5 L3,9 Z" fill="currentColor"/></svg>`}
@@ -144,8 +141,7 @@ function renderLayerTree(tree, state) {
                   input.replaceWith(span);
                 }
               });
-            }}
-          >
+            }}>
             ${node.name}</span
           >
         </div>
@@ -194,8 +190,7 @@ function renderLayerTree(tree, state) {
               position: "after",
             });
           }
-        }}
-      ></div>
+        }}></div>
     `;
   });
 }
