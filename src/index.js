@@ -7,6 +7,8 @@ import { addLineSelection } from "./events/addLineSelection.js";
 import { addSelectionBox } from "./events/addSelectionBox.js";
 import { addCaching } from "./events/addCaching.js";
 import { addDropUpload } from "./events/addDropUpload.js";
+import { addLayerDrag } from "./events/addLayerDrag.js";
+
 import { deleteGeometry } from "./utils/deleteGeometry.js";
 
 import { hitEsc } from "./utils/hitEsc.js";
@@ -22,6 +24,8 @@ import { evaluateAllLayers } from "./evaluateAllLayers.js";
 
 import { pluginSearch } from "./modals/pluginSearch.js";
 import { pluginControlModal } from "./modals/pluginControlModal.js";
+
+import { moveLayer } from "./actions/moveLayer.js";
 
 export const STATE = {
   tool: "SELECT",
@@ -153,56 +157,7 @@ export const STATE = {
       }
       case "MOVE_LAYER": {
         const { sourceId, targetId, position } = args;
-
-        const targetLayer = STATE.layers.find((layer) => layer.id === targetId);
-        const targetLayerParent = STATE.layers.find(
-          (layer) => layer.id === targetLayer.parent
-        );
-        const movedLayer = STATE.layers.find((layer) => layer.id === sourceId);
-        const movedLayerParent = STATE.layers.find(
-          (layer) => layer.id === movedLayer.parent
-        );
-
-        console.log(sourceId);
-
-        // Remove the moved layer from its parent
-        if (movedLayerParent) {
-          movedLayerParent.children = movedLayerParent.children.filter(
-            (child) => child !== movedLayer.id
-          );
-        }
-
-        let targetLayerIndex;
-        if (targetLayerParent) {
-          targetLayerIndex = targetLayerParent.children.indexOf(targetLayer.id);
-        } else {
-          targetLayerIndex = STATE.layers.indexOf(targetLayer);
-        }
-
-        console.log(targetLayerIndex);
-        if (position === "inside") {
-          // Make it a child of the target; we don't care about the index
-          targetLayer.children.push(movedLayer.id);
-          movedLayer.parent = targetLayer.id;
-        } else {
-          // Insert before or after the target
-          const insertIndex =
-            position === "before" ? targetLayerIndex : targetLayerIndex + 1;
-          console.log("inserting at", insertIndex);
-
-          if (targetLayerParent) {
-            targetLayerParent.children.splice(insertIndex, 0, movedLayer.id);
-            movedLayer.parent = targetLayerParent.id;
-          } else {
-            console.log("no parent");
-            console.log(movedLayer);
-            // If it has no parent, move the top-level layer
-            STATE.layers.splice(insertIndex, 0, movedLayer);
-            movedLayer.parent = null;
-          }
-        }
-
-        console.log(STATE.layers);
+        moveLayer(args);
         break;
       }
       default:
@@ -283,6 +238,8 @@ export function init() {
     state.gridSize = stepSize;
   });
 
+  addLayerDrag(state);
+
   addDropUpload((file) => {
     const newState = JSON.parse(file);
     for (const key in newState) {
@@ -313,14 +270,4 @@ export function init() {
       evaluateAllLayers();
     }
   });
-}
-
-function isDescendant(sourceLayer, targetId) {
-  if (!sourceLayer.children) return false;
-
-  for (const child of sourceLayer.children) {
-    if (child.id === targetId) return true;
-    if (isDescendant(child, targetId)) return true;
-  }
-  return false;
 }
