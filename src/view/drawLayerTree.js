@@ -26,13 +26,13 @@ function renderLayerTree(tree, state) {
     const isActive = state.activeLayer === node.id;
 
     return html`
-      <div class="pl-${node.depth * 4} border-l-2 border-gray-400 mx-2 my-2">
-        <div
-          draggable-layer
-          draggable="true"
-          data-node-id=${node.id}
-          class="flex items-center"
-        >
+      <div
+        draggable-layer
+        draggable="true"
+        data-node-id=${node.id}
+        class="pl-${node.depth * 4} border-l-2 border-gray-400 mx-2 my-2"
+      >
+        <div class="flex items-center">
           <button
             @click=${() =>
               state.dispatch({ type: "TOGGLE_LAYER", layerId: node.id })}
