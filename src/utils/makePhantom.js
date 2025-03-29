@@ -12,18 +12,15 @@ export function makePhantom(event, el, onDrop) {
 
     isDragging = true;
 
+    const bbox = el.getBoundingClientRect();
     // Calculate the offset between the cursor and the target element's top-left corner
-    offsetX = e.clientX - el.getBoundingClientRect().left;
-    offsetY = e.clientY - el.getBoundingClientRect().top;
+    offsetX = e.clientX - bbox.left;
+    offsetY = e.clientY - bbox.top;
 
     // Clone the element and style it
     clonedElement = el.cloneNode(true);
 
-    const colorPicker = el.querySelector("color-picker");
-    if (colorPicker !== null) {
-      clonedElement.querySelector("color-picker").value = colorPicker.value;
-      clonedElement.style.width = `${el.getBoundingClientRect().width}px`;
-    }
+    clonedElement.style.width = `${bbox.width}px`;
 
     clonedElement.style.zIndex = "10000";
     clonedElement.style.position = "absolute";

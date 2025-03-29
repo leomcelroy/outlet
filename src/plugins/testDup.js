@@ -58,6 +58,6 @@ export const testDup = {
       })
     );
 
-    return newChildren.flat();
+    return newChildren;
   },
 };

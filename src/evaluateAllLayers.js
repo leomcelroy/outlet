@@ -47,6 +47,7 @@ function evaluateLayer(layer) {
         acc[c.id] = c.value;
         return acc;
       }, {});
+
       return pluginDef.process(controlValues, currentGeo, layer.attributes);
     }, layer.inputGeometry)
     .flat();

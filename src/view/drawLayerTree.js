@@ -13,7 +13,7 @@ export function drawLayerTree(state) {
           + New Layer
         </button>
       </div>
-      <div class="flex-1 overflow-auto bg-gray-200 rounded pb-10">
+      <div class="flex-1 overflow-auto bg-gray-200 rounded pb-10 p-1">
         ${renderLayerTree(getLayerTree(), state)}
       </div>
     </div>
@@ -28,9 +28,9 @@ function renderLayerTree(tree, state) {
     return html`
       <div
         draggable-layer
-        draggable="true"
+        draggable
         data-node-id=${node.id}
-        class="pl-${node.depth * 4} border-l-2 border-gray-400 mx-2 my-2"
+        class="pl-${node.depth * 4} border-l-2 border-gray-400 ml-2 my-1"
       >
         <div class="flex items-center">
           <button
@@ -42,16 +42,32 @@ function renderLayerTree(tree, state) {
               ? svg`<svg width="10" height="10"><path d="M1,3 L9,3 L5,8 Z" fill="currentColor"/></svg>`
               : svg`<svg width="10" height="10"><path d="M3,1 L8,5 L3,9 Z" fill="currentColor"/></svg>`}
           </button>
-          <span
-            class="font-medium hover:bg-blue-100 px-2 ${isActive
-              ? "bg-blue-200"
-              : ""} w-full block cursor-pointer"
-            @click=${() =>
-              state.dispatch({ type: "SET_ACTIVE_LAYER", layerId: node.id })}
-            @dblclick=${(e) => changeLayerName(e, state, node)}
+          <div
+            data-active="${isActive}"
+            class="font-medium hover:bg-blue-100 px-2 data-[active=true]:bg-blue-200 w-full block cursor-pointer flex justify-between items-center"
           >
-            ${node.name}
-          </span>
+            <span
+              class="flex-grow truncate"
+              @click=${() =>
+                state.dispatch({ type: "SET_ACTIVE_LAYER", layerId: node.id })}
+              @dblclick=${(e) => changeLayerName(e, state, node)}
+            >
+              ${node.name}
+            </span>
+            <span
+              draggable-layer-trigger
+              class="flex-shrink-0 cursor-move text-gray-500 hover:text-gray-700"
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16">
+                <circle cx="4" cy="4" r="1.5" />
+                <circle cx="12" cy="4" r="1.5" />
+                <circle cx="4" cy="8" r="1.5" />
+                <circle cx="12" cy="8" r="1.5" />
+                <circle cx="4" cy="12" r="1.5" />
+                <circle cx="12" cy="12" r="1.5" />
+              </svg>
+            </span>
+          </div>
         </div>
 
         <!-- If expanded, show geometry and children -->

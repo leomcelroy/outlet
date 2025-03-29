@@ -15,6 +15,7 @@ export function addLayerDrag(state) {
     const candidate = document
       .elementFromPoint(e.clientX, e.clientY)
       ?.closest("[draggable-layer]");
+
     if (!candidate || candidate.dataset.nodeId === sourceId) {
       unhighlight();
       return;
@@ -46,8 +47,9 @@ export function addLayerDrag(state) {
     lastTarget = null;
   }
 
-  listener("mousedown", "[draggable-layer], [draggable-layer] *", (e) => {
+  listener("mousedown", "[draggable-layer-trigger] *", (e) => {
     const layer = e.target.closest("[draggable-layer]");
+
     if (!layer?.dataset?.nodeId) return;
 
     sourceId = layer.dataset.nodeId;
