@@ -10,7 +10,7 @@ export const stroke = {
         {
           id: "color",
           type: "color",
-          value: color,
+          value: options.color || "black",
         },
         {
           id: "string",
