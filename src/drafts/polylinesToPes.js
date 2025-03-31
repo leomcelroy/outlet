@@ -1,5 +1,5 @@
 export function polylinesToPes(polylines, options = {}) {
-  // Options
+  // Gather options
   let version = options.version === 6 ? 6 : 1;
   let truncated = !!options.truncated;
   let title =
@@ -11,24 +11,13 @@ export function polylinesToPes(polylines, options = {}) {
   let scaleToFit = !!options.scaleToFit;
   let centerInHoop = !!options.centerInHoop;
 
-  console.log({
-    version,
-    truncated,
-    title,
-    hoopWidth,
-    hoopHeight,
-    scaleToFit,
-    centerInHoop,
-  });
-
-  // Gather stitches and colors from polylines
+  // Collect points/colors; track bounding box
   let rawStitches = [];
   let rawColors = [];
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
   for (let block of polylines) {
     let c = block.color >>> 0;
     for (let line of block.polylines) {
@@ -45,56 +34,44 @@ export function polylinesToPes(polylines, options = {}) {
     }
   }
 
-  // Transform (scale + center) if requested
-  // We treat the bounding box of the entire design in user-space,
-  // and transform it so it fits and/or is centered in the hoop.
+  console.log({ rawStitches, rawColors });
+
+  // Scale or center if asked
   let designWidth = maxX - minX;
   let designHeight = maxY - minY;
-
   let scale = 1;
   if (scaleToFit && designWidth > 0 && designHeight > 0) {
     let sx = hoopWidth / designWidth;
     let sy = hoopHeight / designHeight;
     scale = Math.min(sx, sy);
   }
-
-  // Centering in the hoop means we want the design's center to be at (hoopWidth/2, hoopHeight/2).
-  // The bounding box center in raw space is midX, midY.
   let midX = (minX + maxX) / 2;
   let midY = (minY + maxY) / 2;
 
-  // Transform each point
-  // After transform, we recalc new bounding box for final writing.
   let scaledStitches = [];
   let scaledColors = [];
-  let newMinX = Infinity;
-  let newMinY = Infinity;
-  let newMaxX = -Infinity;
-  let newMaxY = -Infinity;
-
+  let newMinX = Infinity,
+    newMinY = Infinity,
+    newMaxX = -Infinity,
+    newMaxY = -Infinity;
   for (let i = 0; i < rawStitches.length; i++) {
     let rx = rawStitches[i][0];
     let ry = rawStitches[i][1];
-
-    // Shift so that raw center is at (0,0), then scale, then shift to hoop center if needed
     let nx = (rx - midX) * scale;
     let ny = (ry - midY) * scale;
     if (centerInHoop) {
       nx += hoopWidth / 2;
       ny += hoopHeight / 2;
     }
-
+    scaledStitches.push([nx, ny]);
+    scaledColors.push(rawColors[i]);
     if (nx < newMinX) newMinX = nx;
     if (ny < newMinY) newMinY = ny;
     if (nx > newMaxX) newMaxX = nx;
     if (ny > newMaxY) newMaxY = ny;
-    scaledStitches.push([nx, ny]);
-    scaledColors.push(rawColors[i]);
   }
-
   let bounds = [newMinX, newMinY, newMaxX, newMaxY];
 
-  // Allocate large buffer for writing
   let bufferSize = 8 * 1024 * 1024;
   let buffer = new ArrayBuffer(bufferSize);
   let dv = new DataView(buffer);
@@ -151,16 +128,17 @@ export function polylinesToPes(polylines, options = {}) {
     writeString(str);
   }
   function writePesString16(str) {
+    if (!str) {
+      writeInt16LE(0);
+      return;
+    }
     writeInt16LE(str.length);
     writeString(str);
   }
-
   let placeStack = [];
   function spaceHolder(count) {
     let startPos = tell();
-    for (let i = 0; i < count; i++) {
-      writeInt8(0);
-    }
+    for (let i = 0; i < count; i++) writeInt8(0);
     placeStack.push([startPos, count]);
   }
   function writeSpaceHolder16LE(value) {
@@ -186,9 +164,7 @@ export function polylinesToPes(polylines, options = {}) {
   }
 
   let MASK_07_BIT = 0x7f;
-  let JUMP_CODE = 0x10;
   let TRIM_CODE = 0x20;
-  let FLAG_LONG = 0x80;
   let PEC_ICON_WIDTH = 48;
   let PEC_ICON_HEIGHT = 38;
 
@@ -223,7 +199,6 @@ export function polylinesToPes(polylines, options = {}) {
     }
     return bestIndex + 1;
   }
-
   function encodeLongForm(value) {
     value &= 0x0fff;
     value |= 0x8000;
@@ -232,7 +207,6 @@ export function polylinesToPes(polylines, options = {}) {
   function flagTrim(longForm) {
     return longForm | (TRIM_CODE << 8);
   }
-
   function floatToBits(f) {
     let b = new ArrayBuffer(4);
     let dv2 = new DataView(b);
@@ -255,44 +229,20 @@ export function polylinesToPes(polylines, options = {}) {
       0x02, 0x00, 0x00, 0x00, 0x00, 0x40, 0x02, 0x00, 0x00, 0x00, 0x00, 0x40,
       0x02, 0x00, 0x00, 0x00, 0x00, 0x40, 0x02, 0x00, 0x00, 0x00, 0x00, 0x40,
       0x02, 0x00, 0x00, 0x00, 0x00, 0x40, 0x02, 0x00, 0x00, 0x00, 0x00, 0x40,
-      0x02, 0x00, 0x00, 0x00, 0x00, 0x40, 0x02, 0x00, 0x00, 0x00, 0x00, 0x40,
       0x04, 0x00, 0x00, 0x00, 0x00, 0x20, 0x08, 0x00, 0x00, 0x00, 0x00, 0x10,
       0xf0, 0xff, 0xff, 0xff, 0xff, 0x0f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     ]);
   }
-
-  function writePecBlock(data) {
-    let width = Math.round(bounds[2] - bounds[0]);
-    let height = Math.round(bounds[3] - bounds[1]);
-    let startPos = tell();
-    writeInt8(0);
-    writeInt8(0);
-    spaceHolder(3);
-    writeInt8(0x31);
-    writeInt8(0xff);
-    writeInt8(0xf0);
-    writeInt16LE(width);
-    writeInt16LE(height);
-    writeInt16LE(0x1e0);
-    writeInt16LE(0x1b0);
-    // No random offset. Just offset to the negative min bounds so it's properly placed
-    writeInt16BE(0x9000 | -Math.round(bounds[0]));
-    writeInt16BE(0x9000 | -Math.round(bounds[1]));
-    writePecStitches(data);
-    let blockLength = tell() - startPos;
-    writeSpaceHolder24LE(blockLength);
-  }
-
   function writePecStitches(data) {
-    let colorFlip = true;
-    let xx = 0;
-    let yy = 0;
+    let colorToggle = true;
+    let xx = 0,
+      yy = 0;
     for (let i = 0; i < data.length; i++) {
       if (i > 0 && data[i].color !== data[i - 1].color) {
         writeInt8(0xfe);
         writeInt8(0xb0);
-        writeInt8(colorFlip ? 2 : 1);
-        colorFlip = !colorFlip;
+        writeInt8(colorToggle ? 2 : 1);
+        colorToggle = !colorToggle;
       }
       let dx = Math.round(data[i].x - xx);
       let dy = Math.round(data[i].y - yy);
@@ -322,22 +272,31 @@ export function polylinesToPes(polylines, options = {}) {
     }
     writeInt8(0xff);
   }
-
-  function writePecGraphicsBlock(data) {
-    writePecGraph();
-    writePecGraph();
-    for (let i = 1; i < data.length; i++) {
-      if (data[i].color !== data[i - 1].color) {
-        writePecGraph();
-      }
-    }
+  function writePecBlock(stitches) {
+    let width = Math.round(bounds[2] - bounds[0]);
+    let height = Math.round(bounds[3] - bounds[1]);
+    let startPos = tell();
+    writeInt8(0);
+    writeInt8(0);
+    spaceHolder(3);
+    writeInt8(0x31);
+    writeInt8(0xff);
+    writeInt8(0xf0);
+    writeInt16LE(width);
+    writeInt16LE(height);
+    writeInt16LE(0x1e0);
+    writeInt16LE(0x1b0);
+    writeInt16BE(0x9000 | -Math.round(bounds[0]));
+    writeInt16BE(0x9000 | -Math.round(bounds[1]));
+    writePecStitches(stitches);
+    let blockLen = tell() - startPos;
+    writeSpaceHolder24LE(blockLen);
   }
-
-  function writePecHeaderBlock() {
-    let colorsUsed = [];
-    for (let i = 0; i < stitchData.length; i++) {
-      if (i === 0 || stitchData[i].color !== stitchData[i - 1].color) {
-        colorsUsed.push(stitchData[i].color);
+  function writePecHeaderBlock(stitches) {
+    let colorBreaks = [];
+    for (let i = 0; i < stitches.length; i++) {
+      if (i === 0 || stitches[i].color !== stitches[i - 1].color) {
+        colorBreaks.push(stitches[i].color);
       }
     }
     writeString("LA:" + title.padEnd(16, " ") + "\r");
@@ -347,58 +306,45 @@ export function polylinesToPes(polylines, options = {}) {
     writeInt8(PEC_ICON_WIDTH / 8);
     writeInt8(PEC_ICON_HEIGHT);
     for (let i = 0; i < 12; i++) writeInt8(0x20);
-    writeInt8(colorsUsed.length - 1);
-
-    let colorIndexList = [];
-    colorIndexList.push(colorsUsed.length - 1);
-    let palette = [];
-    for (let c of colorsUsed) {
-      let idx = findColor(c);
+    writeInt8(colorBreaks.length - 1);
+    let colorIndexList = [colorBreaks.length - 1];
+    for (let clr of colorBreaks) {
+      let idx = findColor(clr);
       colorIndexList.push(idx);
-      palette.push(c);
       writeInt8(idx);
     }
-    for (let i = 0; i < 463 - palette.length; i++) {
-      writeInt8(0x20);
-    }
-    return [colorIndexList, palette];
+    for (let i = 0; i < 463 - colorBreaks.length; i++) writeInt8(0x20);
+    return [colorIndexList, colorBreaks];
   }
-
-  function doPecBlock(data) {
-    let colorInfo = writePecHeaderBlock();
-    writePecBlock(data);
-    writePecGraphicsBlock(data);
+  function writePecGraphicsBlock(stitches) {
+    writePecGraph();
+    writePecGraph();
+    for (let i = 1; i < stitches.length; i++) {
+      if (stitches[i].color !== stitches[i - 1].color) {
+        writePecGraph();
+      }
+    }
+  }
+  function writePec(stitches) {
+    let colorInfo = writePecHeaderBlock(stitches);
+    writePecBlock(stitches);
+    writePecGraphicsBlock(stitches);
     return colorInfo;
   }
-
-  function buildStitchData(stitches, colors) {
-    let data = [];
-    for (let i = 0; i < stitches.length; i++) {
-      data.push({
-        x: stitches[i][0],
-        y: stitches[i][1],
-        color: colors[i],
-      });
-    }
-    return data;
+  function float32LE(f) {
+    return floatToBits(f);
   }
 
+  function buildStitchData(st, c) {
+    let out = [];
+    for (let i = 0; i < st.length; i++) {
+      out.push({ x: st[i][0], y: st[i][1], color: c[i] });
+    }
+    return out;
+  }
   let stitchData = buildStitchData(scaledStitches, scaledColors);
 
-  function writePesBlocks(stitchData, left, top, right, bottom) {
-    if (stitchData.length === 0) return null;
-    writePesString16("CEmbOne");
-    writePesSewSegHeader(left, top, right, bottom);
-    spaceHolder(2);
-    writeInt16LE(0xffff);
-    writeInt16LE(0x0000);
-    writePesString16("CSewSeg");
-    let segData = writePesEmbSewSegSegments(stitchData, left, bottom);
-    writeSpaceHolder16LE(segData[0]);
-    return segData[1];
-  }
-
-  function writePesSewSegHeader(left, top, right, bottom) {
+  function writePesSewSegHeader(l, t, r, b) {
     writeInt16LE(0);
     writeInt16LE(0);
     writeInt16LE(0);
@@ -407,17 +353,14 @@ export function polylinesToPes(polylines, options = {}) {
     writeInt16LE(0);
     writeInt16LE(0);
     writeInt16LE(0);
-    let w = right - left;
-    let h = bottom - top;
-
-    // Identity transform, no random offset
-    writeInt32LE(floatToBits(1));
-    writeInt32LE(floatToBits(0));
-    writeInt32LE(floatToBits(0));
-    writeInt32LE(floatToBits(1));
-    writeInt32LE(floatToBits(0));
-    writeInt32LE(floatToBits(0));
-
+    let w = r - l;
+    let h = b - t;
+    writeInt32LE(float32LE(1));
+    writeInt32LE(float32LE(0));
+    writeInt32LE(float32LE(0));
+    writeInt32LE(float32LE(1));
+    writeInt32LE(float32LE(0));
+    writeInt32LE(float32LE(0));
     writeInt16LE(1);
     writeInt16LE(0);
     writeInt16LE(0);
@@ -425,40 +368,33 @@ export function polylinesToPes(polylines, options = {}) {
     writeInt16LE(h);
     writeInt32LE(0);
     writeInt32LE(0);
+    return tell();
   }
-
-  function writePesEmbSewSegSegments(stitchData, left, bottom) {
+  function writePesEmbSewSegSegments(data, l, b) {
     let sectionCount = 0;
     let colorLog = [];
-    let segment = [];
-    let flag = -1;
-    let colorCode = findColor(stitchData[0].color);
+    if (data.length === 0) return [sectionCount, colorLog];
+    let colorCode = findColor(data[0].color);
     colorLog.push(sectionCount);
     colorLog.push(colorCode);
-    let adjustX = left;
-    let adjustY = bottom;
-
-    let lx0 = stitchData[0].x;
-    let ly0 = stitchData[0].y;
-    segment.push(Math.round(lx0 - adjustX));
-    segment.push(Math.round(ly0 - adjustY));
-    // Duplicate first point
-    segment.push(Math.round(lx0 - adjustX));
-    segment.push(Math.round(ly0 - adjustY));
-    flag = 1;
+    let adjustX = l;
+    let adjustY = b;
+    let segment = [];
+    segment.push(Math.round(data[0].x - adjustX));
+    segment.push(Math.round(data[0].y - adjustY));
+    segment.push(Math.round(data[0].x - adjustX));
+    segment.push(Math.round(data[0].y - adjustY));
+    let flag = 1;
     writeInt16LE(flag);
     writeInt16LE(colorCode);
     writeInt16LE(segment.length / 2);
-    for (let v of segment) {
-      writeInt16LE(v);
-    }
+    for (let v of segment) writeInt16LE(v);
     sectionCount++;
     segment = [];
-
-    for (let i = 0; i < stitchData.length; i++) {
-      let thisColor = stitchData[i].color;
+    for (let i = 0; i < data.length; i++) {
+      let thisColor = data[i].color;
       let mode = 3;
-      if (i > 0 && stitchData[i - 1].color !== thisColor) {
+      if (i > 0 && data[i - 1].color !== thisColor) {
         mode = 8;
       }
       if (mode !== 0 && flag !== -1) {
@@ -470,21 +406,21 @@ export function polylinesToPes(polylines, options = {}) {
         colorLog.push(colorCode);
         flag = 1;
       } else if (mode === 3) {
-        while (i < stitchData.length && stitchData[i].color === thisColor) {
-          segment.push(Math.round(stitchData[i].x - adjustX));
-          segment.push(Math.round(stitchData[i].y - adjustY));
+        while (i < data.length && data[i].color === thisColor) {
+          let px = Math.round(data[i].x - adjustX);
+          let py = Math.round(data[i].y - adjustY);
+          segment.push(px);
+          segment.push(py);
           i++;
         }
         i--;
         flag = 0;
       }
-      if (segment.length !== 0) {
+      if (segment.length) {
         writeInt16LE(flag);
         writeInt16LE(colorCode);
         writeInt16LE(segment.length / 2);
-        for (let v of segment) {
-          writeInt16LE(v);
-        }
+        for (let v of segment) writeInt16LE(v);
         sectionCount++;
       } else {
         flag = -1;
@@ -493,20 +429,29 @@ export function polylinesToPes(polylines, options = {}) {
     }
     let count = colorLog.length / 2;
     writeInt16LE(count);
-    for (let v of colorLog) {
-      writeInt16LE(v);
-    }
+    for (let v of colorLog) writeInt16LE(v);
     writeInt16LE(0);
     writeInt16LE(0);
     return [sectionCount, colorLog];
   }
 
+  function writePesBlocks(data, l, t, r, b) {
+    if (!data.length) return null;
+    writePesString16("CEmbOne");
+    let sewSegStart = writePesSewSegHeader(l, t, r, b);
+    spaceHolder(2);
+    writeInt16LE(0xffff);
+    writeInt16LE(0);
+    writePesString16("CSewSeg");
+    let segData = writePesEmbSewSegSegments(data, l, b);
+    writeSpaceHolder16LE(segData[0]);
+    return segData[1];
+  }
   function writePesHeaderV1(blockCount) {
     writeInt16LE(1);
     writeInt16LE(1);
     writeInt16LE(blockCount);
   }
-
   function writePesHeaderV6(blockCount) {
     writeInt16LE(1);
     writeInt8(0x30);
@@ -535,39 +480,48 @@ export function polylinesToPes(polylines, options = {}) {
     writeInt16LE(1);
     writeInt16LE(0);
     writeInt8(0);
-    writeInt32LE(floatToBits(1));
-    writeInt32LE(floatToBits(0));
-    writeInt32LE(floatToBits(0));
-    writeInt32LE(floatToBits(1));
-    writeInt32LE(floatToBits(0));
-    writeInt32LE(floatToBits(0));
+    writeInt32LE(float32LE(1));
+    writeInt32LE(float32LE(0));
+    writeInt32LE(float32LE(0));
+    writeInt32LE(float32LE(1));
+    writeInt32LE(float32LE(0));
+    writeInt32LE(float32LE(0));
     writeInt16LE(0);
     writeInt16LE(0);
     writeInt16LE(0);
-    let paletteCount = 1;
+    let distinctColors = 1;
     for (let i = 1; i < scaledColors.length; i++) {
-      if (scaledColors[i] !== scaledColors[i - 1]) paletteCount++;
+      if (scaledColors[i] !== scaledColors[i - 1]) distinctColors++;
     }
-    writeInt16LE(paletteCount);
+    writeInt16LE(distinctColors);
+    for (let i = 0; i < distinctColors; i++) {
+      writePesString8("Color" + i);
+      writeInt8(0);
+      writeInt8(0);
+      writeInt8(0);
+      writeInt8(0);
+      writeInt32LE(0x0a);
+      writePesString8("desc");
+      writePesString8("brand");
+      writePesString8("chart");
+    }
     writeInt16LE(blockCount);
   }
-
   function writePesAddendum(colorInfo) {
     let colorIndexList = colorInfo[0];
-    let rgbList = colorInfo[1];
-    let count = colorIndexList.length;
-    for (let i = 0; i < count; i++) {
+    let palette = colorInfo[1];
+    for (let i = 0; i < colorIndexList.length; i++) {
       writeInt8(colorIndexList[i]);
     }
-    for (let i = count; i < 128; i++) {
+    for (let i = colorIndexList.length; i < 128; i++) {
       writeInt8(0x20);
     }
-    for (let i = 0; i < rgbList.length; i++) {
+    for (let i = 0; i < palette.length; i++) {
       for (let j = 0; j < 0x90; j++) {
         writeInt8(0x00);
       }
     }
-    for (let c of rgbList) {
+    for (let c of palette) {
       writeInt24LE(c);
     }
   }
@@ -576,15 +530,10 @@ export function polylinesToPes(polylines, options = {}) {
     return new Uint8Array(buffer.slice(0, position));
   }
 
-  function writePec() {
-    let colorInfo = doPecBlock(stitchData);
-    return colorInfo;
-  }
-
   function writeVersion1() {
     writeString("#PES0001");
     spaceHolder(4);
-    if (stitchData.length === 0) {
+    if (!stitchData.length) {
       writePesHeaderV1(0);
       writeInt16LE(0);
       writeInt16LE(0);
@@ -592,35 +541,22 @@ export function polylinesToPes(polylines, options = {}) {
       writePesHeaderV1(1);
       writeInt16LE(0xffff);
       writeInt16LE(0);
-      let patternLeft = bounds[0];
-      let patternTop = bounds[1];
-      let patternRight = bounds[2];
-      let patternBottom = bounds[3];
-      writePesBlocks(
-        stitchData,
-        patternLeft,
-        patternTop,
-        patternRight,
-        patternBottom
-      );
+      let [l, t, r, b] = bounds;
+      writePesBlocks(stitchData, l, t, r, b);
     }
     writeSpaceHolder32LE(tell());
-    writePec();
+    writePec(stitchData);
   }
-
   function writeTruncatedVersion1() {
     writeString("#PES0001");
     writeInt8(0x16);
-    for (let i = 0; i < 13; i++) {
-      writeInt8(0x00);
-    }
-    writePec();
+    for (let i = 0; i < 13; i++) writeInt8(0x00);
+    writePec(stitchData);
   }
-
   function writeVersion6() {
     writeString("#PES0060");
     spaceHolder(4);
-    if (stitchData.length === 0) {
+    if (!stitchData.length) {
       writePesHeaderV6(0);
       writeInt16LE(0);
       writeInt16LE(0);
@@ -628,17 +564,8 @@ export function polylinesToPes(polylines, options = {}) {
       writePesHeaderV6(1);
       writeInt16LE(0xffff);
       writeInt16LE(0);
-      let patternLeft = bounds[0];
-      let patternTop = bounds[1];
-      let patternRight = bounds[2];
-      let patternBottom = bounds[3];
-      let log = writePesBlocks(
-        stitchData,
-        patternLeft,
-        patternTop,
-        patternRight,
-        patternBottom
-      );
+      let [l, t, r, b] = bounds;
+      let log = writePesBlocks(stitchData, l, t, r, b);
       writeInt32LE(0);
       writeInt32LE(0);
       if (log) {
@@ -649,21 +576,20 @@ export function polylinesToPes(polylines, options = {}) {
       }
     }
     writeSpaceHolder32LE(tell());
-    let colorInfo = writePec();
+    let colorInfo = writePec(stitchData);
     writePesAddendum(colorInfo);
     writeInt16LE(0);
   }
-
   function writeTruncatedVersion6() {
     writeString("#PES0060");
     spaceHolder(4);
     writePesHeaderV6(0);
-    for (let i = 0; i < 5; i++) writeInt8(0x00);
+    for (let i = 0; i < 5; i++) writeInt8(0);
     writeInt16LE(0);
     writeInt16LE(0);
     let curPos = tell();
     writeSpaceHolder32LE(curPos);
-    let colorInfo = writePec();
+    let colorInfo = writePec(stitchData);
     writePesAddendum(colorInfo);
     writeInt16LE(0);
   }
@@ -681,6 +607,5 @@ export function polylinesToPes(polylines, options = {}) {
       writeVersion6();
     }
   }
-
   return finalize();
 }

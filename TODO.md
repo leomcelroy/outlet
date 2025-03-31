@@ -3,8 +3,10 @@ TODO
 - delete layers
 - bezier drawing
 - add measure sides
-- reorder plugins
 - toggle layer visibility
+- make drawing mode -> edit sketch mode
+  - sketches have paths on them
+  - a sketch gets turned into an array of paths
 
 DONE
 
@@ -16,3 +18,4 @@ DONE
 - rename layers
 - add grid
 - add snap to grid
+- reorder plugins

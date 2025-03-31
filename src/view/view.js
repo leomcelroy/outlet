@@ -30,7 +30,7 @@ function formatCoord(value) {
 
 export function view(state) {
   return html`
-    <div class="h-screen w-screen flex flex-col">
+    <div class="h-screen w-screen flex flex-col select-none">
       ${drawTopBar(state)}
 
       <div class="flex flex-1 overflow-hidden">

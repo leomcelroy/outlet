@@ -11,7 +11,9 @@ function drawPoints(state, points) {
       ?data-selected=${state.selectedGeometry.has(point.id)}
       cx=${state.params[point.x]}
       cy=${state.params[point.y]}
-      r=${PT_SIZE}
+      r=${
+        state.panZoomMethods ? PT_SIZE / state.panZoomMethods.scale() : PT_SIZE
+      }
       fill="black"
       class="hover:fill-orange-500 data-[selected]:fill-red-500"
       vector-effect="non-scaling-stroke"

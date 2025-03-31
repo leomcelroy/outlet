@@ -26,17 +26,39 @@ export function deleteGeometry(state) {
         toRemove.add(g.id);
       }
     } else if (g.type === "path") {
-      let shouldRemove = false;
-      g.data.forEach((cmd) => {
-        if (
-          (cmd.point && selectedPoints.has(cmd.point)) ||
-          (cmd.control1 && selectedPoints.has(cmd.control1)) ||
-          (cmd.control2 && selectedPoints.has(cmd.control2))
-        ) {
-          shouldRemove = true;
-        }
+      // Filter out commands that reference selected points
+      const validCommands = g.data.filter((cmd) => {
+        const referencesSelectedPoint =
+          (cmd.point &&
+            (selectedPoints.has(cmd.point) || toRemove.has(cmd.point))) ||
+          (cmd.control1 &&
+            (selectedPoints.has(cmd.control1) || toRemove.has(cmd.control1))) ||
+          (cmd.control2 &&
+            (selectedPoints.has(cmd.control2) || toRemove.has(cmd.control2)));
+
+        return !referencesSelectedPoint;
       });
-      if (shouldRemove) {
+
+      // If we have enough valid commands, update the path
+      if (validCommands.length > 1) {
+        // Make sure the first command is a 'start' command
+        if (validCommands[0].cmd !== "start" && validCommands.length > 0) {
+          validCommands[0] = { point: validCommands[0].point, cmd: "start" };
+        }
+
+        // Check if path only contains start and close commands
+        const onlyStartAndClose = validCommands.every(
+          (cmd) => cmd.cmd === "start" || cmd.cmd === "close"
+        );
+
+        if (onlyStartAndClose) {
+          // Remove path if it's just start and close
+          toRemove.add(g.id);
+        } else {
+          g.data = validCommands;
+        }
+      } else {
+        // If not enough valid commands remain, mark the path for removal
         toRemove.add(g.id);
       }
     }
@@ -51,11 +73,44 @@ export function deleteGeometry(state) {
       usedPoints.add(g.p1);
       usedPoints.add(g.p2);
     } else if (g.type === "path") {
+      // First collect all points that are used in commands that don't reference selected points
+      const validCommands = [];
       g.data.forEach((cmd) => {
-        if (cmd.point) usedPoints.add(cmd.point);
-        if (cmd.control1) usedPoints.add(cmd.control1);
-        if (cmd.control2) usedPoints.add(cmd.control2);
+        const referencesSelectedPoint =
+          (cmd.point && selectedPoints.has(cmd.point)) ||
+          (cmd.control1 && selectedPoints.has(cmd.control1)) ||
+          (cmd.control2 && selectedPoints.has(cmd.control2));
+
+        if (!referencesSelectedPoint) {
+          validCommands.push(cmd);
+          if (cmd.point) usedPoints.add(cmd.point);
+          if (cmd.control1) usedPoints.add(cmd.control1);
+          if (cmd.control2) usedPoints.add(cmd.control2);
+        }
       });
+
+      // If we have valid commands, update the path data
+      if (validCommands.length > 1) {
+        // Make sure the first command is a 'start' command
+        if (validCommands[0].cmd !== "start" && validCommands.length > 0) {
+          validCommands[0] = { point: validCommands[0].point, cmd: "start" };
+        }
+
+        // Check if path only contains start and close commands
+        const onlyStartAndClose = validCommands.every(
+          (cmd) => cmd.cmd === "start" || cmd.cmd === "close"
+        );
+
+        if (onlyStartAndClose) {
+          // Remove path if it's just start and close
+          toRemove.add(g.id);
+        } else {
+          g.data = validCommands;
+        }
+      } else {
+        // If no valid commands remain, mark the path for removal
+        toRemove.add(g.id);
+      }
     }
   });
 
