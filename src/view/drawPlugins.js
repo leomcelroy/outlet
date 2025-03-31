@@ -5,7 +5,7 @@ export function drawPlugins(state) {
   const plugins = activeLayer.plugins.map(
     (plugin) => html`
       <div
-        class="plugin-item flex flex-col border-b border-gray-200 relative"
+        class="flex flex-col border-b border-gray-400 relative"
         draggable-plugin
         data-plugin-id="${plugin.id}"
       >
@@ -45,7 +45,6 @@ export function drawPlugins(state) {
                   layerId: activeLayer.id,
                 });
                 state.dispatch({ type: "OPEN_PLUGIN_MODAL", pluginId: null });
-                remove();
               }}
               class="px-2 text-xs text-gray-500 hover:text-red-600 cursor-pointer"
             >
