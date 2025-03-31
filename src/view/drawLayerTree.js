@@ -25,12 +25,15 @@ function renderLayerTree(tree, state) {
     const isExpanded = state.expandedLayers?.includes(node.id);
     const isActive = state.activeLayer === node.id;
 
+    // Filter out points from the geometry list
+    const visibleGeometry = node.geometry.filter((geo) => geo.type !== "point");
+
     return html`
       <div
         draggable-layer
         draggable
         data-node-id=${node.id}
-        class="pl-${node.depth * 4} border-l-2 border-gray-400 ml-2 my-1"
+        class="border-l-2 border-gray-400 ml-2 my-1"
       >
         <div class="flex items-center">
           <button
@@ -44,7 +47,7 @@ function renderLayerTree(tree, state) {
           </button>
           <div
             data-active="${isActive}"
-            class="font-medium hover:bg-blue-100 px-2 data-[active=true]:bg-blue-200 w-full block cursor-pointer flex justify-between items-center"
+            class="font-medium hover:bg-blue-100 px-1 data-[active=true]:bg-blue-200 w-full block cursor-pointer flex justify-between items-center"
           >
             <span
               class="flex-grow truncate"
@@ -70,26 +73,28 @@ function renderLayerTree(tree, state) {
           </div>
         </div>
 
-        <!-- If expanded, show geometry and children -->
         ${isExpanded
           ? html`
-              ${node.geometry.length > 0
-                ? html`
-                    <div class="ml-6 mt-1 text-sm text-gray-600">
-                      ${node.geometry.map(
-                        (geo) => html`
-                          <div class="flex items-center">
-                            <span class="w-2 h-[2px] bg-gray-400 mr-2"></span>
-                            ${geo.type} (${geo.id})
-                          </div>
-                        `
-                      )}
+              <div class="ml-4">
+                ${visibleGeometry.map(
+                  (geo) => html`
+                    <div
+                      class="hover:bg-blue-100 px-1 cursor-pointer"
+                      @click=${() => {
+                        if (geo.type === "path") {
+                          state.editingPath = geo.id;
+                          state.selectedGeometry = new Set();
+                          state.tool = "SELECT";
+                        } else {
+                          state.selectedGeometry.add(geo.id);
+                        }
+                      }}
+                    >
+                      ${geo.type} ${geo.id}
                     </div>
                   `
-                : ""}
-              ${node.children.length > 0
-                ? renderLayerTree(node.children, state)
-                : ""}
+                )}
+              </div>
             `
           : ""}
       </div>
