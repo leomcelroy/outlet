@@ -94,6 +94,9 @@ function renderLayerTree(tree, state) {
                     </div>
                   `
                 )}
+                ${node.children.length > 0
+                  ? renderLayerTree(node.children, state)
+                  : ""}
               </div>
             `
           : ""}
