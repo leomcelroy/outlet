@@ -73,3 +73,63 @@ a path is
   }
 }
 ```
+
+evaluated it is
+
+```js
+{
+  "id": "_bJWH",
+  "type": "path",
+  "data": [
+      {
+        "cmd": "start",
+         x: number,
+         y: number
+      },
+      {
+        "cmd": "line",
+         x: number,
+         y: number
+      },
+      {
+        "cmd": "line",
+         x: number,
+         y: number
+      },
+      {
+        "cmd": "line",
+         x: number,
+         y: number
+      },
+      {
+        "cmd": "line",
+         x: number,
+         y: number
+      },
+      {
+        "cmd": "line",
+         x: number,
+         y: number
+      },
+      {
+        "cmd": "line",
+         x: number,
+         y: number
+      },
+      {
+        "cmd": "line",
+         x: number,
+         y: number
+      },
+      {
+        "cmd": "close"
+      }
+  ],
+  "layer": "DEFAULT_LAYER",
+  "attributes": {
+      "fill": "none",
+      "stroke": "black",
+      "strokeWidth": 2
+  }
+}
+```
