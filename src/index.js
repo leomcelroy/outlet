@@ -20,7 +20,7 @@ import { view } from "./view/view.js";
 import { fill } from "./plugins/fill.js";
 import { stroke } from "./plugins/stroke.js";
 import { testDup } from "./plugins/testDup.js";
-import { exportPes } from "./plugins/exportPes.js";
+import { exportDST } from "./plugins/exportDST.js";
 
 import { evaluateAllLayers } from "./evaluateAllLayers.js";
 
@@ -33,6 +33,24 @@ export const STATE = {
   tool: "SELECT",
   params: {},
   selectedGeometry: new Set(),
+  sketches: [
+    /*
+    {
+      id: "SKETCH_1",
+      layer: "layerId",
+      paths: [
+        {
+          id,
+          data
+        }
+      ],
+      attributes: {
+        stroke: "black",
+        fill:"none"
+      },
+    },
+    */
+  ],
   geometries: [],
   layers: [
     {
@@ -75,7 +93,7 @@ export const STATE = {
   grid: true,
   adaptiveGrid: false,
   panZoomMethods: null,
-  plugins: [fill, stroke, testDup, exportPes],
+  plugins: [fill, stroke, testDup, exportDST],
   currentPath: null,
   editingPath: null,
   dispatch(args) {

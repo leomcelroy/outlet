@@ -71,7 +71,7 @@ export function pluginTriggerModal(plugin, layer) {
                       <label
                         for="string-${control.id}"
                         class="text-sm font-medium text-gray-700"
-                        >String</label
+                        >${control.label || control.id}</label
                       >
                       <input
                         type="text"
@@ -90,7 +90,7 @@ export function pluginTriggerModal(plugin, layer) {
                       <label
                         for="number-${control.id}"
                         class="text-sm font-medium text-gray-700"
-                        >Number</label
+                        >${control.label || control.id}</label
                       >
                       <input
                         type="number"
@@ -109,7 +109,7 @@ export function pluginTriggerModal(plugin, layer) {
                       <label
                         for="slider-${control.id}"
                         class="text-sm font-medium text-gray-700"
-                        >Slider</label
+                        >${control.label || control.id}</label
                       >
                       <input
                         type="range"
@@ -130,7 +130,7 @@ export function pluginTriggerModal(plugin, layer) {
                       <label
                         for="select-${control.id}"
                         class="text-sm font-medium text-gray-700"
-                        >Select</label
+                        >${control.label || control.id}</label
                       >
                       <select
                         id="select-${control.id}"
@@ -158,9 +158,8 @@ export function pluginTriggerModal(plugin, layer) {
                       <label
                         for="boolean-${control.id}"
                         class="text-sm font-medium text-gray-700"
+                        >${control.label || control.id}</label
                       >
-                        ${control.id}
-                      </label>
                       <input
                         id="boolean-${control.id}"
                         type="checkbox"

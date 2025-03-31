@@ -1,4 +1,7 @@
-export function tajimaDSTExport(data, designName) {
+export function tajimaDSTExport({ data, designName, stitchLength }) {
+  designName = designName || "Untitled";
+  stitchLength = stitchLength || 3;
+
   let expArr = [];
 
   // We'll accumulate: { dx, dy, type }, type can be 'jump', 'color', 'end', or undefined for normal stitch
@@ -18,7 +21,7 @@ export function tajimaDSTExport(data, designName) {
     let dyDST = Math.round(dyMm * 10);
 
     // A single move might still exceed ±121, so break it up
-    const limit = 30;
+    const limit = stitchLength * 10;
     while (Math.abs(dxDST) > limit || Math.abs(dyDST) > limit) {
       let stepX = Math.max(-limit, Math.min(limit, dxDST));
       let stepY = Math.max(-limit, Math.min(limit, dyDST));
@@ -62,8 +65,6 @@ export function tajimaDSTExport(data, designName) {
         }
       });
     }
-
-    console.log({ moves, block });
   }
   // End of design
   moves.push({ dx: 0, dy: 0, type: "end" });
@@ -97,7 +98,7 @@ export function tajimaDSTExport(data, designName) {
     return s.length >= width ? s : " ".repeat(width - s.length) + s;
   }
 
-  writeString(`LA:${(designName || "Untitled").slice(0, 16)}\r`);
+  writeString(`LA:${designName.slice(0, 16)}\r`);
   writeString(`ST:${padNumber(totalStitches, 7)}\r`);
   // We approximate color count = number of blocks
   let colorCount = data.length;
@@ -133,7 +134,7 @@ export function tajimaDSTExport(data, designName) {
 Encode a single move in DST format. 
 We've already limited dx, dy to ±121, so this should never fail.
 */
-function encodeDSTRecord(dx, dy, type) {
+function encodeDSTRecord(dx, dy, type = "stitch") {
   // DST inverts Y
   dy = -dy;
 
