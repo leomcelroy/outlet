@@ -29,6 +29,8 @@ import { pluginControlModal } from "./modals/pluginControlModal.js";
 
 import { moveLayer } from "./actions/moveLayer.js";
 
+import { bitmap } from "./plugins/bitmap.js";
+
 export const STATE = {
   tool: "SELECT",
   params: {},
@@ -93,7 +95,7 @@ export const STATE = {
   grid: true,
   adaptiveGrid: false,
   panZoomMethods: null,
-  plugins: [fill, stroke, testDup, exportDST],
+  plugins: [fill, stroke, testDup, exportDST, bitmap],
   currentPath: null,
   editingPath: null,
   dispatch(args) {
