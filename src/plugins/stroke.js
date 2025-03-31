@@ -1,11 +1,13 @@
-import { createRandStr } from "../utils/createRandStr.js";
+const type = "stroke";
+const name = "Stroke";
 
 export const stroke = {
-  type: "stroke",
-  name: "Stroke",
+  type,
+  name,
   init(options = {}) {
     return {
-      type: "stroke",
+      name,
+      type,
       controls: [
         {
           id: "color",

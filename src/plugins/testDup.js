@@ -8,7 +8,8 @@ export const testDup = {
   name,
   init() {
     return {
-      type: "testDup",
+      name,
+      type,
       controls: [
         {
           id: "offset",
