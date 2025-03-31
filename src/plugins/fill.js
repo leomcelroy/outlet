@@ -6,25 +6,27 @@ const name = "Fill";
 export const fill = {
   type,
   name,
-  init(defaults = {}) {
-    const color = defaults.color ?? "black";
+  init(options = {}) {
     return {
-      id: createRandStr(),
-      type,
-      name,
+      type: "fill",
       controls: [
         {
           id: "color",
           type: "color",
-          value: color,
+          value: options.color || "none",
         },
       ],
     };
   },
-  // children as array of array of geometries
-  process(controls, children, attributes) {
+  process(controls, children) {
     const { color } = controls;
-    attributes.fill = color;
-    return children;
+    // Only process paths, apply fill to path attributes
+    return children.flat().map((path) => ({
+      ...path,
+      attributes: {
+        ...path.attributes,
+        fill: color,
+      },
+    }));
   },
 };
