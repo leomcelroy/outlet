@@ -1,63 +1,39 @@
 import { createRandStr } from "../utils/createRandStr.js";
 
 const type = "testDup";
-const name = "Test Dup";
+const name = "Test Duplicate";
 
 export const testDup = {
   type,
   name,
-  init(defaults = {}) {
-    const offset = defaults.offset ?? 10;
+  init() {
     return {
-      id: createRandStr(),
-      type,
-      name,
+      type: "testDup",
       controls: [
         {
-          id: "xOffset",
+          id: "offset",
           type: "number",
-          value: offset,
+          value: 100,
         },
-        {
-          id: "yOffset",
-          type: "number",
-          value: offset,
-        },
-        // strings
-        // numbers
-        // slider (range)
-        // color
-        // select (dropdown)
-        // boolean (checkbox)
       ],
     };
   },
-  // children as array of array of geometries
-  process(controls, children, attributes) {
-    const { xOffset, yOffset } = controls;
-    const newChildren = [];
+  process(controls, children) {
+    const { offset } = controls;
+    const paths = children.flat();
 
-    children.forEach((child) =>
-      child.forEach((c) => {
-        switch (c.type) {
-          case "point":
-            newChildren.push(c);
-            newChildren.push({ ...c, x: c.x + xOffset, y: c.y + yOffset });
-            break;
-          case "line":
-            newChildren.push(c);
-            newChildren.push({
-              ...c,
-              x1: c.x1 + xOffset,
-              y1: c.y1 + yOffset,
-              x2: c.x2 + xOffset,
-              y2: c.y2 + yOffset,
-            });
-            break;
-        }
-      })
-    );
-
-    return newChildren;
+    // Create duplicates of paths with offset
+    return [
+      ...paths,
+      ...paths.map((path) => ({
+        ...path,
+        data: path.data.map((cmd) => ({
+          ...cmd,
+          x: cmd.x + offset,
+          y: cmd.y + offset,
+        })),
+        id: createRandStr(4), // New ID for duplicate
+      })),
+    ];
   },
 };
