@@ -30,13 +30,11 @@ function evaluateLayer(layer) {
   (layer.children || []).forEach((childId) => {
     const child = STATE.layers.find((l) => l.id === childId);
     if (child) {
-      // By now, child's evaluateLayer has set child.outputGeometry
       layer.inputGeometry.push(child.outputGeometry);
     }
   });
 
-  // Apply plugins. We pass the entire array-of-arrays to each plugin in turn.
-  // Each plugin decides how to handle that structure.
+  // Apply plugins only to paths
   layer.outputGeometry = layer.plugins
     .reduce((currentGeo, plugin) => {
       const pluginDef = STATE.plugins.find((p) => p.type === plugin.type);
@@ -48,7 +46,17 @@ function evaluateLayer(layer) {
         return acc;
       }, {});
 
-      return pluginDef.process(controlValues, currentGeo, layer.attributes);
+      // Only pass paths to the plugin process function
+      const paths = currentGeo.map((geoArray) =>
+        geoArray.filter((g) => g.type === "path")
+      );
+      const processedPaths = pluginDef.process(controlValues, paths);
+
+      // Replace processed paths in the original geometry
+      return currentGeo.map((geoArray) => {
+        const nonPaths = geoArray.filter((g) => g.type !== "path");
+        return [...nonPaths, ...processedPaths];
+      });
     }, layer.inputGeometry)
     .flat();
 }
@@ -69,14 +77,26 @@ function paramSub(geometries) {
           y: STATE.params[g.y],
         };
       case "line":
-        // We assume p1, p2 are geometry IDs whose coords also need substituting
-        // If they reference separate geometry, you can look them up if needed
         return {
           ...g,
           x1: STATE.params[geoMap[g.p1].x],
           y1: STATE.params[geoMap[g.p1].y],
           x2: STATE.params[geoMap[g.p2].x],
           y2: STATE.params[geoMap[g.p2].y],
+        };
+      case "path":
+        return {
+          ...g,
+          data: g.data.map((cmd) => ({
+            ...cmd,
+            x: STATE.params[cmd.x],
+            y: STATE.params[cmd.y],
+            // Handle curve control points if present
+            ...(cmd.x1 && { x1: STATE.params[cmd.x1] }),
+            ...(cmd.y1 && { y1: STATE.params[cmd.y1] }),
+            ...(cmd.x2 && { x2: STATE.params[cmd.x2] }),
+            ...(cmd.y2 && { y2: STATE.params[cmd.y2] }),
+          })),
         };
       default:
         return g;
