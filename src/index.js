@@ -21,6 +21,7 @@ import { fill } from "./plugins/fill.js";
 import { stroke } from "./plugins/stroke.js";
 import { testDup } from "./plugins/testDup.js";
 import { exportDST } from "./plugins/exportDST.js";
+import { demoModal } from "./plugins/customModalDemo.js";
 
 import { evaluateAllLayers } from "./evaluateAllLayers.js";
 
@@ -41,12 +42,30 @@ export const STATE = {
       paths: [
         {
           id,
-          data
+          data: [
+            {
+              cmd: "start",
+              point: pointId,
+            },
+            {
+             cmd: "line",
+             point: pointId,
+            },
+            {
+              cmd: "cubic",
+              point: pointId,
+              control1: pointId,
+              control2: pointId
+            },
+            {
+              cmd: "end"
+            }
+          ]
         }
       ],
       attributes: {
         stroke: "black",
-        fill:"none"
+        fill: "none"
       },
     },
     */
@@ -93,7 +112,7 @@ export const STATE = {
   grid: true,
   adaptiveGrid: false,
   panZoomMethods: null,
-  plugins: [fill, stroke, testDup, exportDST],
+  plugins: [fill, stroke, testDup, exportDST, demoModal],
   currentPath: null,
   editingPath: null,
   dispatch(args) {
@@ -140,7 +159,36 @@ export const STATE = {
             "[modal-controls-container]"
           );
           container.innerHTML = "";
-          pluginControlModal();
+
+          const activeLayer = STATE.layers.find(
+            (layer) => layer.id === STATE.activeLayer
+          );
+
+          const plugin = activeLayer.plugins.find(
+            (plugin) => plugin.id === pluginId
+          );
+
+          const pluginType = STATE.plugins.find((p) => p.type === plugin.type);
+
+          if (pluginType.customModal) {
+            const updateControl = (controlId, value) => {
+              STATE.dispatch({
+                type: "UPDATE_PLUGIN_CONTROL",
+                pluginId,
+                controlId,
+                value,
+              });
+            };
+
+            const close = () => {
+              STATE.dispatch({ type: "OPEN_PLUGIN_MODAL", pluginId: null });
+              container.innerHTML = "";
+            };
+
+            pluginType.customModal({ container, updateControl, close });
+          } else {
+            pluginControlModal();
+          }
         }
         break;
       }
