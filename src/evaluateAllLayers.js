@@ -53,10 +53,7 @@ function evaluateLayer(layer) {
       const processedPaths = pluginDef.process(controlValues, paths);
 
       // Replace processed paths in the original geometry
-      return currentGeo.map((geoArray) => {
-        const nonPaths = geoArray.filter((g) => g.type !== "path");
-        return [...nonPaths, ...processedPaths];
-      });
+      return [processedPaths];
     }, layer.inputGeometry)
     .flat();
 }
@@ -68,38 +65,57 @@ function paramSub(geometries) {
     geoMap[geo.id] = geo;
   });
 
-  return geometries.map((g) => {
-    switch (g.type) {
-      case "point":
-        return {
-          ...g,
-          x: STATE.params[g.x],
-          y: STATE.params[g.y],
-        };
-      case "line":
-        return {
-          ...g,
-          x1: STATE.params[geoMap[g.p1].x],
-          y1: STATE.params[geoMap[g.p1].y],
-          x2: STATE.params[geoMap[g.p2].x],
-          y2: STATE.params[geoMap[g.p2].y],
-        };
-      case "path":
-        return {
-          ...g,
-          data: g.data.map((cmd) => ({
-            ...cmd,
-            x: STATE.params[cmd.x],
-            y: STATE.params[cmd.y],
-            // Handle curve control points if present
-            ...(cmd.x1 && { x1: STATE.params[cmd.x1] }),
-            ...(cmd.y1 && { y1: STATE.params[cmd.y1] }),
-            ...(cmd.x2 && { x2: STATE.params[cmd.x2] }),
-            ...(cmd.y2 && { y2: STATE.params[cmd.y2] }),
-          })),
-        };
-      default:
-        return g;
-    }
-  });
+  return geometries
+    .filter((g) => g.type === "path")
+    .map((g) => {
+      switch (g.type) {
+        case "point":
+          return {
+            ...g,
+            x: STATE.params[g.x],
+            y: STATE.params[g.y],
+          };
+        case "line":
+          return {
+            ...g,
+            x1: STATE.params[geoMap[g.p1].x],
+            y1: STATE.params[geoMap[g.p1].y],
+            x2: STATE.params[geoMap[g.p2].x],
+            y2: STATE.params[geoMap[g.p2].y],
+          };
+        case "path":
+          return {
+            ...g,
+            data: g.data.map((cmd) => {
+              const base = { ...cmd };
+              if (cmd.cmd === "close") return base;
+
+              if (cmd.point) {
+                const point = geoMap[cmd.point];
+                return {
+                  ...base,
+                  x: STATE.params[point.x],
+                  y: STATE.params[point.y],
+                };
+              }
+
+              if (cmd.control1) {
+                const c1 = geoMap[cmd.control1];
+                base.x1 = STATE.params[c1.x];
+                base.y1 = STATE.params[c1.y];
+              }
+
+              if (cmd.control2) {
+                const c2 = geoMap[cmd.control2];
+                base.x2 = STATE.params[c2.x];
+                base.y2 = STATE.params[c2.y];
+              }
+
+              return base;
+            }),
+          };
+        default:
+          return g;
+      }
+    });
 }

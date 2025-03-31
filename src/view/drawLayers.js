@@ -2,56 +2,28 @@ import { html, svg } from "lit-html";
 
 const PT_SIZE = 5;
 
-function drawPoints(state, points, layer) {
-  // Only show points if they belong to the path being edited
-  if (!state.editingPath) return [];
-
-  const editingPath = state.geometries.find((g) => g.id === state.editingPath);
-  if (!editingPath) return [];
-
-  // Get all point IDs used in the path
-  const pathPointIds = new Set();
-  editingPath.data.forEach((cmd) => {
-    if (cmd.cmd === "start" || cmd.cmd === "line") {
-      const point = state.geometries.find(
-        (g) =>
-          g.type === "point" &&
-          state.params[g.x] === state.params[cmd.x] &&
-          state.params[g.y] === state.params[cmd.y]
-      );
-      if (point) pathPointIds.add(point.id);
-    }
-  });
-
-  // Only draw points that are part of the editing path
-  const pathPoints = points.filter((point) => pathPointIds.has(point.id));
-
-  const currentPoint = state.currentPoint;
-  const boxSize = 2.75 * PT_SIZE;
-
-  return pathPoints.map(
+function drawPoints(state, points) {
+  return points.map(
     (point) => svg`
     <circle
       point
       data-id=${point.id}
       ?data-selected=${state.selectedGeometry.has(point.id)}
-      cx=${point.x}
-      cy=${point.y}
+      cx=${state.params[point.x]}
+      cy=${state.params[point.y]}
       r=${PT_SIZE}
-      fill=${layer.attributes.fill || "black"}
-      stroke=${layer.attributes.stroke || "none"}
-      stroke-width=${layer.attributes.strokeWidth || 0}
+      fill="black"
       class="hover:fill-orange-500 data-[selected]:fill-red-500"
       vector-effect="non-scaling-stroke"
     />
     ${
-      currentPoint && currentPoint.overlap === point.id
+      state.currentPoint && state.currentPoint.overlap === point.id
         ? svg`
       <rect
-        x=${point.x - boxSize / 2}
-        y=${point.y - boxSize / 2}
-        width=${boxSize}
-        height=${boxSize}
+        x=${state.params[point.x] - (2.75 * PT_SIZE) / 2}
+        y=${state.params[point.y] - (2.75 * PT_SIZE) / 2}
+        width=${2.75 * PT_SIZE}
+        height=${2.75 * PT_SIZE}
         fill="none"
         stroke="black"
         stroke-width=${PT_SIZE * 0.5}
@@ -121,6 +93,28 @@ function drawPaths(state, paths, layer) {
 
 function drawLayer(state, layer) {
   const flatGeometry = layer.outputGeometry;
+
+  const editingPath = state.geometries.find((g) => g.id === state.editingPath);
+  const editingPathPoints = new Set();
+  editingPath?.data.forEach((cmd) => {
+    if (cmd.point) {
+      editingPathPoints.add(cmd.point);
+    }
+    if (cmd.control1) {
+      editingPathPoints.add(cmd.control1);
+    }
+    if (cmd.control2) {
+      editingPathPoints.add(cmd.control2);
+    }
+  });
+
+  const allPoints = state.geometries.filter((x) => x.type === "point");
+
+  // Get ALL points from state.geometries that are used in the editing path
+  const relevantPoints = editingPath
+    ? allPoints.filter((point) => editingPathPoints.has(point.id))
+    : [];
+
   return svg`
     <g layer data-layer-id=${layer.id}>
       ${drawLines(
@@ -133,11 +127,7 @@ function drawLayer(state, layer) {
         flatGeometry.filter((x) => x.type === "path"),
         layer
       )}
-      ${drawPoints(
-        state,
-        flatGeometry.filter((x) => x.type === "point"),
-        layer
-      )}
+      ${drawPoints(state, relevantPoints, layer)}
     </g>
   `;
 }

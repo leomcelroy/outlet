@@ -24,6 +24,17 @@ export function deleteGeometry(state) {
     }
   });
 
+  // Add points used in paths
+  state.geometries.forEach((g) => {
+    if (g.type === "path" && !toRemove.has(g.id)) {
+      g.data.forEach((cmd) => {
+        if (cmd.point) usedPoints.add(cmd.point);
+        if (cmd.control1) usedPoints.add(cmd.control1);
+        if (cmd.control2) usedPoints.add(cmd.control2);
+      });
+    }
+  });
+
   state.geometries.forEach((g) => {
     if (g.type === "point" && !usedPoints.has(g.id)) {
       toRemove.add(g.id);

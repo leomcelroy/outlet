@@ -41,7 +41,7 @@ export function addPathDrawing(el, state) {
     };
 
     state.geometries.push(p);
-    return { pId, xId, yId };
+    return pId;
   }
 
   function isNearPoint(x1, y1, x2, y2, threshold = 10) {
@@ -81,20 +81,19 @@ export function addPathDrawing(el, state) {
       }
     }
 
-    const { pId, xId, yId } = addPoint(x, y);
+    const pointId = addPoint(x, y);
 
     if (!state.currentPath) {
       // Start new path
       const pathId = createRandStr(4);
-      startPointId = pId; // Store the starting point ID
+      startPointId = pointId;
       state.currentPath = {
         id: pathId,
         type: "path",
         data: [
           {
             cmd: "start",
-            x: xId,
-            y: yId,
+            point: pointId,
           },
         ],
         layer: state.activeLayer,
@@ -109,8 +108,7 @@ export function addPathDrawing(el, state) {
       // Add point to existing path
       state.currentPath.data.push({
         cmd: "line",
-        x: xId,
-        y: yId,
+        point: pointId,
       });
     }
     evaluateAllLayers();

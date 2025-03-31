@@ -195,9 +195,38 @@ export const STATE = {
         evaluateAllLayers();
         break;
       }
-      case "CLEAR":
-        clear(STATE);
+      case "CLEAR": {
+        STATE.editingPath = null;
+        STATE.selectedGeometry = new Set();
+        STATE.currentPath = null;
+        STATE.currentPoint = null;
+        STATE.lineStart = null;
+        STATE.geometries = [];
+        STATE.params = {};
+        STATE.layers = [
+          {
+            id: "DEFAULT_LAYER",
+            name: "Default Layer",
+            parent: null,
+            children: [],
+            plugins: [stroke.init({ color: "black" })],
+            attributes: {},
+            outputGeometry: [],
+            inputGeometry: [],
+          },
+        ];
+        STATE.activeLayer = "DEFAULT_LAYER";
+        evaluateAllLayers();
+
+        // Save the cleared state to cache
+        const file = JSON.stringify({
+          geometries: STATE.geometries,
+          params: STATE.params,
+          layers: STATE.layers,
+        });
+        sessionStorage.setItem("sketchState", file);
         break;
+      }
       default:
         console.log("Unknown event:", type);
         break;

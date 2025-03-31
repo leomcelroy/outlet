@@ -9,6 +9,25 @@ import { drawLayerTree } from "./drawLayerTree.js";
 import { drawPlugins } from "./drawPlugins.js";
 import { drawGrid } from "./drawGrid.js";
 
+function formatCoord(value) {
+  if (value == null) return "     0.0";
+
+  const absValue = Math.abs(value);
+  const sign = value < 0 ? "-" : " ";
+  const formatted = absValue.toFixed(1);
+
+  // Always ensure total length is 6 characters
+  let spaces = "";
+  const digitsAndDecimal = formatted.length;
+  const spacesNeeded = 6 - digitsAndDecimal - 1; // -1 for the sign
+
+  for (let i = 0; i < spacesNeeded; i++) {
+    spaces += " ";
+  }
+
+  return spaces + sign + formatted;
+}
+
 export function view(state) {
   return html`
     <div class="h-screen w-screen flex flex-col">
@@ -37,10 +56,16 @@ export function view(state) {
             </g>
           </svg>
           <div
-            class="absolute bottom-4 left-4 font-mono bg-gray-200 rounded px-2 py-1 text-sm shadow-lg border border-gray-300"
+            class="absolute bottom-4 left-4 font-mono bg-gray-200 rounded px-2 py-1 text-sm shadow-lg border border-gray-300 w-24 flex flex-col"
           >
-            x: ${state.canvasX?.toFixed(1).padStart(7, " ") ?? "  -----"}, y:
-            ${state.canvasY?.toFixed(1).padStart(7, " ") ?? "  -----"}
+            <div class="flex justify-between">
+              <span>x:</span>
+              <span>${formatCoord(state.canvasX)}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>y:</span>
+              <span>${formatCoord(state.canvasY)}</span>
+            </div>
           </div>
           ${drawToolbar(state)}
           <div

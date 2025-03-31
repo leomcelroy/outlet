@@ -1,21 +1,22 @@
 import { createRandStr } from "../utils/createRandStr.js";
 
+const type = "exportPes";
+const name = "Export PES";
+
 export const exportPes = {
-  type: "exportPes",
-  name: "Export PES",
+  type,
+  name,
+  applyOnce: true,
   init() {
     return {
-      type: "exportPes",
-      controls: [
-        {
-          id: "export",
-          type: "button",
-          value: "Export",
-        },
-      ],
+      id: createRandStr(),
+      type,
+      name,
+      controls: [],
     };
   },
   process(controls, children) {
+    console.log({ children });
     // Just pass through paths unchanged, actual export happens in UI
     return children.flat();
   },
