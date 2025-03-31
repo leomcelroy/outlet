@@ -1,38 +1,25 @@
 import { createRandStr } from "../utils/createRandStr.js";
 
-const type = "exportPes";
-const name = "Export PES";
-
 export const exportPes = {
-  type,
-  name,
-  applyOnce: true,
-  init(defaults = {}) {
+  type: "exportPes",
+  name: "Export PES",
+  init() {
     return {
-      id: createRandStr(),
-      type,
-      name,
-      controls: [],
+      type: "exportPes",
+      controls: [
+        {
+          id: "export",
+          type: "button",
+          value: "Export",
+        },
+      ],
     };
   },
-  // children as array of array of geometries
-  process(controls, children, attributes) {
-    console.log("Export PES");
-    // console.log({ controls, children, attributes });
-    // Convert geometry to stitch data
-
-    console.log("GEOMETRIES", children);
-    const stitches = convertGeometryToStitches(
-      children.flat().filter((g) => g.type === "line")
-    );
-
-    console.log("STITCHES", stitches);
-    // Create PES file buffer
-    const pesData = createPESFile(stitches);
-
-    // Download the file
-    downloadPESFile(pesData);
+  process(controls, children) {
+    // Just pass through paths unchanged, actual export happens in UI
+    return children.flat();
   },
+  // Keep any existing export-specific methods
 };
 
 function convertGeometryToStitches(geometries) {

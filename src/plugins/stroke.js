@@ -6,18 +6,16 @@ const name = "Stroke";
 export const stroke = {
   type,
   name,
-  init(defaults = {}) {
-    const color = defaults.color ?? "black";
-
+  init(options = {}) {
     return {
       id: createRandStr(),
-      type,
       name,
+      type,
       controls: [
         {
           id: "color",
           type: "color",
-          value: color,
+          value: options.color || "black",
         },
         {
           id: "string",
@@ -50,10 +48,15 @@ export const stroke = {
       ],
     };
   },
-  // children as array of array of geometries
-  process(controls, children, attributes) {
+  process(controls, children) {
     const { color } = controls;
-    attributes.stroke = color;
-    return children;
+    // Only process paths, apply stroke to path attributes
+    return children.flat().map((path) => ({
+      ...path,
+      attributes: {
+        ...path.attributes,
+        stroke: color,
+      },
+    }));
   },
 };

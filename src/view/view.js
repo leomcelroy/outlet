@@ -4,6 +4,7 @@ import { drawTopBar } from "./drawTopBar.js";
 import { drawToolbar } from "./drawToolbar.js";
 import { drawLayers } from "./drawLayers.js";
 import { drawTempLine } from "./drawTempLine.js";
+import { drawTempPath } from "./drawTempPath.js";
 import { drawLayerTree } from "./drawLayerTree.js";
 import { drawPlugins } from "./drawPlugins.js";
 import { drawGrid } from "./drawGrid.js";
@@ -30,7 +31,8 @@ export function view(state) {
               <!-- -- -->
               ${drawLayers(state)}
               <!-- -- -->
-              ${drawTempLine(state)}
+              ${state.tool === "DRAW" ? drawTempLine(state) : ""}
+              ${state.tool === "DRAW_PATH" ? drawTempPath(state) : ""}
               <!-- -- -->
             </g>
           </svg>

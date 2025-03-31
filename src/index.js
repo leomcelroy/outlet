@@ -9,6 +9,7 @@ import { addCaching } from "./events/addCaching.js";
 import { addDropUpload } from "./events/addDropUpload.js";
 import { addLayerDrag } from "./events/addLayerDrag.js";
 import { addPluginDrag } from "./events/addPluginDrag.js";
+import { addPathDrawing } from "./events/addPathDrawing.js";
 
 import { deleteGeometry } from "./utils/deleteGeometry.js";
 
@@ -75,6 +76,8 @@ export const STATE = {
   adaptiveGrid: true,
   panZoomMethods: null,
   plugins: [fill, stroke, testDup, exportPes],
+  currentPath: null,
+  editingPath: null,
   dispatch(args) {
     const { type } = args;
 
@@ -114,7 +117,13 @@ export const STATE = {
       case "OPEN_PLUGIN_MODAL": {
         const { pluginId } = args;
         STATE.openPluginModal = pluginId;
-        if (pluginId) pluginControlModal();
+        if (pluginId) {
+          const container = document.querySelector(
+            "[modal-controls-container]"
+          );
+          container.innerHTML = "";
+          pluginControlModal();
+        }
         break;
       }
       case "REMOVE_PLUGIN": {
@@ -186,6 +195,9 @@ export const STATE = {
         evaluateAllLayers();
         break;
       }
+      case "CLEAR":
+        clear(STATE);
+        break;
       default:
         console.log("Unknown event:", type);
         break;
@@ -227,6 +239,8 @@ export function init() {
   addSketching(sketchBoard, state);
   addPtDragging(sketchBoard, state);
   addLineSelection(sketchBoard, state);
+  addPathDrawing(sketchBoard, state);
+
   addSelectionBox(sketchBoard, state, ({ contains, selectBox }) => {
     state.geometries.forEach((g) => {
       if (g.type === "point") {
@@ -289,12 +303,20 @@ export function init() {
     }
 
     if (e.key === "Escape") {
+      if (state.editingPath) {
+        state.editingPath = null;
+      }
       state.selectedGeometry = new Set();
     }
 
     if (e.key === "Backspace") {
       deleteGeometry(state);
       evaluateAllLayers();
+    }
+
+    if (e.key === "p" && !e.metaKey && !e.ctrlKey) {
+      hitEsc();
+      state.tool = "DRAW_PATH";
     }
   });
 }
