@@ -1,18 +1,11 @@
 import { createRandStr } from "../utils/createRandStr.js";
 
-const type = "stroke";
-const name = "Stroke";
-
 export const stroke = {
-  type,
-  name,
-  init(defaults = {}) {
-    const color = defaults.color ?? "black";
-
+  type: "stroke",
+  name: "Stroke",
+  init(options = {}) {
     return {
-      id: createRandStr(),
-      type,
-      name,
+      type: "stroke",
       controls: [
         {
           id: "color",
@@ -50,10 +43,15 @@ export const stroke = {
       ],
     };
   },
-  // children as array of array of geometries
-  process(controls, children, attributes) {
+  process(controls, children) {
     const { color } = controls;
-    attributes.stroke = color;
-    return children;
+    // Only process paths, apply stroke to path attributes
+    return children.flat().map((path) => ({
+      ...path,
+      attributes: {
+        ...path.attributes,
+        stroke: color,
+      },
+    }));
   },
 };
