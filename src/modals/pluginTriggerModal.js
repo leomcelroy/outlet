@@ -199,7 +199,7 @@ export function pluginTriggerModal(plugin, layer) {
                 );
 
                 evaluateAllLayers();
-                remove();
+                // remove();
               }}
               class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md text-sm font-medium transition-colors"
             >

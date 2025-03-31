@@ -6,27 +6,51 @@ export function deleteGeometry(state) {
     toRemove.add(id);
   });
 
-  // Add lines that reference removed geometry
+  // Find all selected points
+  const selectedPoints = new Set();
+  state.geometries.forEach((g) => {
+    if (g.type === "point" && state.selectedGeometry.has(g.id)) {
+      selectedPoints.add(g.id);
+    }
+  });
+
+  // Add geometry that references selected points to removal set
   state.geometries.forEach((g) => {
     if (g.type === "line") {
-      if (toRemove.has(g.p1) || toRemove.has(g.p2)) {
+      if (
+        selectedPoints.has(g.p1) ||
+        selectedPoints.has(g.p2) ||
+        toRemove.has(g.p1) ||
+        toRemove.has(g.p2)
+      ) {
+        toRemove.add(g.id);
+      }
+    } else if (g.type === "path") {
+      let shouldRemove = false;
+      g.data.forEach((cmd) => {
+        if (
+          (cmd.point && selectedPoints.has(cmd.point)) ||
+          (cmd.control1 && selectedPoints.has(cmd.control1)) ||
+          (cmd.control2 && selectedPoints.has(cmd.control2))
+        ) {
+          shouldRemove = true;
+        }
+      });
+      if (shouldRemove) {
         toRemove.add(g.id);
       }
     }
   });
 
-  // Find points not referenced by any remaining lines
+  // Find points not referenced by any remaining geometry
   const usedPoints = new Set();
   state.geometries.forEach((g) => {
-    if (g.type === "line" && !toRemove.has(g.id)) {
+    if (toRemove.has(g.id)) return;
+
+    if (g.type === "line") {
       usedPoints.add(g.p1);
       usedPoints.add(g.p2);
-    }
-  });
-
-  // Add points used in paths
-  state.geometries.forEach((g) => {
-    if (g.type === "path" && !toRemove.has(g.id)) {
+    } else if (g.type === "path") {
       g.data.forEach((cmd) => {
         if (cmd.point) usedPoints.add(cmd.point);
         if (cmd.control1) usedPoints.add(cmd.control1);
@@ -35,6 +59,7 @@ export function deleteGeometry(state) {
     }
   });
 
+  // Add unused points to removal set
   state.geometries.forEach((g) => {
     if (g.type === "point" && !usedPoints.has(g.id)) {
       toRemove.add(g.id);

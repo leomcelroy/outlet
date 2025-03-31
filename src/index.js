@@ -73,7 +73,7 @@ export const STATE = {
   openPluginModal: null,
   gridSize: 10,
   grid: true,
-  adaptiveGrid: true,
+  adaptiveGrid: false,
   panZoomMethods: null,
   plugins: [fill, stroke, testDup, exportPes],
   currentPath: null,
@@ -271,8 +271,28 @@ export function init() {
   addPathDrawing(sketchBoard, state);
 
   addSelectionBox(sketchBoard, state, ({ contains, selectBox }) => {
+    // Get the current editing path and its points
+    const editingPath = state.geometries.find(
+      (g) => g.id === state.editingPath
+    );
+    const editingPathPoints = new Set();
+
+    if (editingPath) {
+      editingPath.data.forEach((cmd) => {
+        if (cmd.point) {
+          editingPathPoints.add(cmd.point);
+        }
+        if (cmd.control1) {
+          editingPathPoints.add(cmd.control1);
+        }
+        if (cmd.control2) {
+          editingPathPoints.add(cmd.control2);
+        }
+      });
+    }
+
     state.geometries.forEach((g) => {
-      if (g.type === "point") {
+      if (g.type === "point" && editingPathPoints.has(g.id)) {
         const x = state.params[g.x];
         const y = state.params[g.y];
 
