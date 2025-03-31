@@ -19,3 +19,57 @@ DONE
 - add grid
 - add snap to grid
 - reorder plugins
+
+INFO
+
+a path is
+
+```js
+{
+  "id": "_bJWH",
+  "type": "path",
+  "data": [
+      {
+          "cmd": "start",
+          "point": "_KXIN"
+      },
+      {
+          "cmd": "line",
+          "point": "_QCm5"
+      },
+      {
+          "cmd": "line",
+          "point": "_MCMz"
+      },
+      {
+          "cmd": "line",
+          "point": "_sT6B"
+      },
+      {
+          "cmd": "line",
+          "point": "_5a3f"
+      },
+      {
+          "cmd": "line",
+          "point": "_CUTD"
+      },
+      {
+          "cmd": "line",
+          "point": "_Q38u"
+      },
+      {
+          "cmd": "line",
+          "point": "_5AOB"
+      },
+      {
+          "cmd": "close"
+      }
+  ],
+  "layer": "DEFAULT_LAYER",
+  "attributes": {
+      "fill": "none",
+      "stroke": "black",
+      "strokeWidth": 2
+  }
+}
+```
