@@ -41,6 +41,10 @@ export function addSketching(el, state) {
   });
 
   listener("mousemove", "", (e) => {
+    const [x, y] = getPoint(e);
+    state.canvasX = x;
+    state.canvasY = y;
+
     if (state.tool !== "DRAW") {
       reset();
       return;

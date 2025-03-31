@@ -36,6 +36,12 @@ export function view(state) {
               <!-- -- -->
             </g>
           </svg>
+          <div
+            class="absolute bottom-4 left-4 font-mono bg-gray-200 rounded px-2 py-1 text-sm shadow-lg border border-gray-300"
+          >
+            x: ${state.canvasX?.toFixed(1).padStart(7, " ") ?? "  -----"}, y:
+            ${state.canvasY?.toFixed(1).padStart(7, " ") ?? "  -----"}
+          </div>
           ${drawToolbar(state)}
           <div
             modal-controls-container
