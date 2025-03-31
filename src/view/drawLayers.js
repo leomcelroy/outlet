@@ -3,10 +3,33 @@ import { html, svg } from "lit-html";
 const PT_SIZE = 5;
 
 function drawPoints(state, points, layer) {
+  // Only show points if they belong to the path being edited
+  if (!state.editingPath) return [];
+
+  const editingPath = state.geometries.find((g) => g.id === state.editingPath);
+  if (!editingPath) return [];
+
+  // Get all point IDs used in the path
+  const pathPointIds = new Set();
+  editingPath.data.forEach((cmd) => {
+    if (cmd.cmd === "start" || cmd.cmd === "line") {
+      const point = state.geometries.find(
+        (g) =>
+          g.type === "point" &&
+          state.params[g.x] === state.params[cmd.x] &&
+          state.params[g.y] === state.params[cmd.y]
+      );
+      if (point) pathPointIds.add(point.id);
+    }
+  });
+
+  // Only draw points that are part of the editing path
+  const pathPoints = points.filter((point) => pathPointIds.has(point.id));
+
   const currentPoint = state.currentPoint;
   const boxSize = 2.75 * PT_SIZE;
 
-  return points.map(
+  return pathPoints.map(
     (point) => svg`
     <circle
       point
@@ -61,6 +84,41 @@ function drawLines(state, lines, layer) {
   );
 }
 
+function drawPaths(state, paths, layer) {
+  return paths.map((path) => {
+    let pathData = "";
+    path.data.forEach((cmd, i) => {
+      if (cmd.cmd === "start") {
+        pathData += `M ${cmd.x} ${cmd.y} `;
+      } else if (cmd.cmd === "line") {
+        pathData += `L ${cmd.x} ${cmd.y} `;
+      } else if (cmd.cmd === "curve") {
+        pathData += `C ${cmd.x1} ${cmd.y1} ${cmd.x2} ${cmd.y2} ${cmd.x} ${cmd.y} `;
+      } else if (cmd.cmd === "close") {
+        pathData += "Z ";
+      }
+    });
+
+    return svg`
+      <path
+        path
+        data-id=${path.id}
+        ?data-selected=${state.selectedGeometry.has(path.id)}
+        class="hover:stroke-orange-500 data-[selected]:stroke-red-500"
+        d=${pathData}
+        fill=${path.attributes?.fill || layer.attributes.fill || "none"}
+        stroke=${path.attributes?.stroke || layer.attributes.stroke || "black"}
+        stroke-width=${
+          path.attributes?.strokeWidth ||
+          layer.attributes.strokeWidth ||
+          PT_SIZE * 0.6
+        }
+        vector-effect="non-scaling-stroke"
+      />
+    `;
+  });
+}
+
 function drawLayer(state, layer) {
   const flatGeometry = layer.outputGeometry;
   return svg`
@@ -68,6 +126,11 @@ function drawLayer(state, layer) {
       ${drawLines(
         state,
         flatGeometry.filter((x) => x.type === "line"),
+        layer
+      )}
+      ${drawPaths(
+        state,
+        flatGeometry.filter((x) => x.type === "path"),
         layer
       )}
       ${drawPoints(
