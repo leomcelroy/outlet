@@ -128,10 +128,10 @@ function encodeRecord(dx, dy, command) {
 export function exportDST(data) {
   // data: [ { polylines: [ [ [x, y], ... ], ... ], color: '#RRGGBB' }, ... ]
 
-  let minX = Infinity,
-    maxX = -Infinity;
-  let minY = Infinity,
-    maxY = -Infinity;
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
   let allStitches = [];
   let currentX = 0;
   let currentY = 0;
