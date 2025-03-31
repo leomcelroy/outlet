@@ -4,21 +4,54 @@ export function drawPlugins(state) {
   const activeLayer = state.layers.find((l) => l.id === state.activeLayer);
   const plugins = activeLayer.plugins.map(
     (plugin) => html`
-      <div class="plugin-item flex flex-col border-b border-gray-200 relative">
+      <div
+        class="plugin-item flex flex-col border-b border-gray-200 relative"
+        draggable-plugin
+        data-plugin-id="${plugin.id}"
+      >
         <div class="flex items-center justify-between p-2">
-          <span class="plugin-name text-sm font-semibold text-gray-800">
+          <span
+            draggable-plugin-trigger
+            class="flex-shrink-0 cursor-move text-gray-500 hover:text-gray-700"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16">
+              <circle cx="4" cy="4" r="1.5" />
+              <circle cx="12" cy="4" r="1.5" />
+              <circle cx="4" cy="8" r="1.5" />
+              <circle cx="12" cy="8" r="1.5" />
+              <circle cx="4" cy="12" r="1.5" />
+              <circle cx="12" cy="12" r="1.5" />
+            </svg>
+          </span>
+          <span class="pl-2 text-sm font-semibold text-gray-800 mr-auto">
             ${plugin.name}
           </span>
-          <button
-            @click=${() =>
-              state.dispatch({
-                type: "OPEN_PLUGIN_MODAL",
-                pluginId: plugin.id,
-              })}
-            class="ml-4 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-200"
-          >
-            Edit
-          </button>
+          <div class="flex items-center gap-1">
+            <button
+              @click=${() =>
+                state.dispatch({
+                  type: "OPEN_PLUGIN_MODAL",
+                  pluginId: plugin.id,
+                })}
+              class="px-2 text-xs text-blue-600 hover:text-blue-800 cursor-pointer"
+            >
+              Edit
+            </button>
+            <button
+              @click=${() => {
+                state.dispatch({
+                  type: "REMOVE_PLUGIN",
+                  pluginId: plugin.id,
+                  layerId: activeLayer.id,
+                });
+                state.dispatch({ type: "OPEN_PLUGIN_MODAL", pluginId: null });
+                remove();
+              }}
+              class="px-2 text-xs text-gray-500 hover:text-red-600 cursor-pointer"
+            >
+              Delete
+            </button>
+          </div>
         </div>
       </div>
     `

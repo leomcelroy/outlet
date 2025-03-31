@@ -19,6 +19,7 @@ function drawPoints(state, points, layer) {
       stroke=${layer.attributes.stroke || "none"}
       stroke-width=${layer.attributes.strokeWidth || 0}
       class="hover:fill-orange-500 data-[selected]:fill-red-500"
+      vector-effect="non-scaling-stroke"
     />
     ${
       currentPoint && currentPoint.overlap === point.id
@@ -31,6 +32,7 @@ function drawPoints(state, points, layer) {
         fill="none"
         stroke="black"
         stroke-width=${PT_SIZE * 0.5}
+        vector-effect="non-scaling-stroke"
       />
     `
         : ""
@@ -49,6 +51,7 @@ function drawLines(state, lines, layer) {
       class="hover:stroke-orange-500 data-[selected]:stroke-red-500"
       stroke=${layer.attributes.stroke || "black"}
       stroke-width=${layer.attributes.strokeWidth || PT_SIZE * 0.6}
+      vector-effect="non-scaling-stroke"
       x1=${line.x1}
       y1=${line.y1}
       x2=${line.x2}

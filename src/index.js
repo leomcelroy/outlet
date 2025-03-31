@@ -8,6 +8,7 @@ import { addSelectionBox } from "./events/addSelectionBox.js";
 import { addCaching } from "./events/addCaching.js";
 import { addDropUpload } from "./events/addDropUpload.js";
 import { addLayerDrag } from "./events/addLayerDrag.js";
+import { addPluginDrag } from "./events/addPluginDrag.js";
 
 import { deleteGeometry } from "./utils/deleteGeometry.js";
 
@@ -160,6 +161,31 @@ export const STATE = {
         moveLayer(args);
         break;
       }
+      case "MOVE_PLUGIN": {
+        const { sourceId, targetId, position } = args;
+        const activeLayer = STATE.layers.find(
+          (l) => l.id === STATE.activeLayer
+        );
+        const sourceIndex = activeLayer.plugins.findIndex(
+          (p) => p.id === sourceId
+        );
+        const targetIndex = activeLayer.plugins.findIndex(
+          (p) => p.id === targetId
+        );
+
+        if (sourceIndex === -1 || targetIndex === -1) break;
+
+        // Remove the plugin from its current position
+        const [plugin] = activeLayer.plugins.splice(sourceIndex, 1);
+
+        // Insert it at the new position
+        const insertIndex =
+          position === "before" ? targetIndex : targetIndex + 1;
+        activeLayer.plugins.splice(insertIndex, 0, plugin);
+
+        evaluateAllLayers();
+        break;
+      }
       default:
         console.log("Unknown event:", type);
         break;
@@ -239,6 +265,7 @@ export function init() {
   });
 
   addLayerDrag(state);
+  addPluginDrag(state);
 
   addDropUpload((file) => {
     const newState = JSON.parse(file);

@@ -195,22 +195,6 @@ export function pluginControlModal() {
                 return html``;
             }
           })}
-          <div class="mt-4 pt-3 border-t border-gray-200">
-            <button
-              @click=${() => {
-                STATE.dispatch({
-                  type: "REMOVE_PLUGIN",
-                  pluginId: plugin.id,
-                  layerId: activeLayer.id,
-                });
-                STATE.dispatch({ type: "OPEN_PLUGIN_MODAL", pluginId: null });
-                remove();
-              }}
-              class="w-full bg-red-400 hover:bg-red-500 text-white py-2 px-4 rounded-md text-sm font-medium transition-colors"
-            >
-              Delete Plugin
-            </button>
-          </div>
         </div>
       </div>
     `;
