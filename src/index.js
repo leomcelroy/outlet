@@ -117,7 +117,13 @@ export const STATE = {
       case "OPEN_PLUGIN_MODAL": {
         const { pluginId } = args;
         STATE.openPluginModal = pluginId;
-        if (pluginId) pluginControlModal();
+        if (pluginId) {
+          const container = document.querySelector(
+            "[modal-controls-container]"
+          );
+          container.innerHTML = "";
+          pluginControlModal();
+        }
         break;
       }
       case "REMOVE_PLUGIN": {

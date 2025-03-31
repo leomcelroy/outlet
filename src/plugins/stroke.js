@@ -1,3 +1,5 @@
+import { createRandStr } from "../utils/createRandStr.js";
+
 const type = "stroke";
 const name = "Stroke";
 
@@ -6,6 +8,7 @@ export const stroke = {
   name,
   init(options = {}) {
     return {
+      id: createRandStr(),
       name,
       type,
       controls: [

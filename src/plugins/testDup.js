@@ -8,6 +8,7 @@ export const testDup = {
   name,
   init() {
     return {
+      id: createRandStr(),
       name,
       type,
       controls: [
@@ -33,7 +34,7 @@ export const testDup = {
           x: cmd.x + offset,
           y: cmd.y + offset,
         })),
-        id: createRandStr(4), // New ID for duplicate
+        id: path.id, // New ID for duplicate
       })),
     ];
   },

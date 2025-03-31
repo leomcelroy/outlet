@@ -1,3 +1,5 @@
+import { createRandStr } from "../utils/createRandStr.js";
+
 const type = "fill";
 const name = "Fill";
 
@@ -6,6 +8,7 @@ export const fill = {
   name,
   init(options = {}) {
     return {
+      id: createRandStr(),
       name,
       type: "fill",
       controls: [
