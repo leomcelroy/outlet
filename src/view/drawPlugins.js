@@ -67,7 +67,7 @@ export function drawPlugins(state) {
           + New Plugin
         </button>
       </div>
-      <div class="overflow-scroll flex-1 bg-gray-200 rounded w-full">
+      <div class="overflow-auto flex-1 bg-gray-200 rounded w-full">
         ${plugins}
       </div>
     </div>
