@@ -10,8 +10,7 @@ import { addLayerDrag } from "./events/addLayerDrag.js";
 import { addPluginDrag } from "./events/addPluginDrag.js";
 import { addPathDrag } from "./events/addPathDrag.js";
 import { addPathDrawing } from "./events/addPathDrawing.js";
-import { deleteGeometry } from "./utils/deleteGeometry.js";
-import { hitEsc } from "./utils/hitEsc.js";
+import { addHotKeys } from "./events/addHotKeys.js";
 import { moveLayer } from "./actions/moveLayer.js";
 import { movePath } from "./actions/movePath.js";
 import { view } from "./view/view.js";
@@ -400,27 +399,7 @@ export function init() {
   });
 
   addCaching(state);
+  addHotKeys(state);
 
   renderLoop();
-
-  window.addEventListener("keydown", (e) => {
-    if (e.key === "d") {
-      hitEsc();
-      state.tool = "DRAW_PATH";
-    }
-
-    if (e.key === "s") {
-      state.tool = "SELECT";
-    }
-
-    if (e.key === "Escape") {
-      state.currentPath = null;
-      state.selectedGeometry = new Set();
-    }
-
-    if (e.key === "Backspace") {
-      deleteGeometry(state);
-      evaluateAllLayers();
-    }
-  });
 }

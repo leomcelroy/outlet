@@ -3,9 +3,14 @@ TODO
 - rasterize
   - holes
 - more plugins
+  - translate
+  - align
+  - distribute
+  - rotate
 - bake layer
 - flip y axis
 - undo/redo
+- drag plugin to other layer
 
 - bezier drawing
 - add measure sides

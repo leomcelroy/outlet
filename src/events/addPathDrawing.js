@@ -143,29 +143,4 @@ export function addPathDrawing(el, state) {
     }
     evaluateAllLayers();
   });
-
-  // Add key handler for starting new subpath
-  window.addEventListener("keydown", (e) => {
-    if (state.tool !== "DRAW_PATH") return;
-
-    if (e.key === "s") {
-      state.tool = "SELECT";
-    } else if (e.key === "d") {
-      state.tool = "DRAW_PATH";
-    } else if (e.key === "Escape") {
-      // Exit path editing mode
-      state.editingPath = null;
-      state.selectedGeometry = new Set();
-      state.currentPath = null;
-      state.currentPoint = null;
-      currentMoveCmd = null;
-      evaluateAllLayers();
-    } else if (e.key === "Enter") {
-      // Finish current path and start a new one
-      state.currentPath = null;
-      state.currentPoint = null;
-      currentMoveCmd = null;
-      evaluateAllLayers();
-    }
-  });
 }
