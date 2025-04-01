@@ -1,5 +1,4 @@
 import { createRandStr } from "../utils/createRandStr.js";
-import { html, render, svg } from "lit-html";
 
 const type = "bitmap";
 const name = "Bitmap";
@@ -55,124 +54,93 @@ export const bitmap = {
     let startPos = [0, 0];
     let lastPos = [0, 0];
     let bitmap = { ...bitmapData };
+    let drawMode = true; // true for draw mode, false for clear mode
 
-    // Function to re-render the entire modal
-    const renderModal = () => {
-      const template = html`
-        <div
-          class="bg-gray-200 p-2 mb-10 inline-block shadow-lg rounded-md border border-gray-400 mr-4">
-          <div
-            class="flex justify-between items-center text-gray-800 mb-2 px-2">
-            <div class="text-lg font-semibold">Edit Bitmap</div>
-            <button
-              class="bg-gray-300 border border-gray-400 rounded-md px-2 py-0.5 text-sm"
-              @click=${close}>
-              Close
-            </button>
-          </div>
-          <div class="relative">
-            <canvas
-              id="bitmap-canvas"
-              width="${bitmap.width * pixelSize}"
-              height="${bitmap.height * pixelSize}"
-              class="[image-rendering:pixelated] mt-2 mb-2 border border-black"
-              style="width: ${bitmap.width *
-              pixelSize}px; height: ${bitmap.height * pixelSize}px"
-              @mousedown=${handleMouseDown}
-              @mousemove=${handleMouseMove}
-              @mouseup=${handleMouseUp}
-              @mouseleave=${handleMouseLeave}></canvas>
-            <svg
-              id="bitmap-overlay"
-              width="${bitmap.width * pixelSize}"
-              height="${bitmap.height * pixelSize}"
-              class="absolute top-0 left-0 pointer-events-none"
-              style="z-index: 10;">
-              <!-- Grid lines -->
-              ${renderGridLines(bitmap.width, bitmap.height, pixelSize)}
-              <!-- Highlights -->
-              <rect
-                id="row-highlight"
-                fill="rgba(0, 119, 255, 0.05)"
-                x="0"
-                y="0"
-                width="0"
-                height="0"></rect>
-              <rect
-                id="col-highlight"
-                fill="rgba(0, 119, 255, 0.05)"
-                x="0"
-                y="0"
-                width="0"
-                height="0"></rect>
-              <rect
-                id="cell-highlight"
-                fill="rgba(0, 119, 255, 0.15)"
-                stroke="rgba(0, 119, 255, 0.5)"
-                stroke-width="1"
-                x="0"
-                y="0"
-                width="${pixelSize}"
-                height="${pixelSize}"
-                style="display: none"></rect>
-            </svg>
-          </div>
-          <div class="flex items-center mb-2">
-            <div class="flex gap-2 items-center">
-              <div class="flex items-center">
-                <label for="bitmap-width" class="mr-2">Width:</label>
-                <input
-                  id="bitmap-width"
-                  type="number"
-                  min="1"
-                  max="64"
-                  .value="${bitmap.width}"
-                  class="w-16 px-1 py-0.5 border border-gray-400 rounded-md text-center" />
-              </div>
-              <div class="flex items-center">
-                <label for="bitmap-height" class="mr-2">Height:</label>
-                <input
-                  id="bitmap-height"
-                  type="number"
-                  min="1"
-                  max="64"
-                  .value="${bitmap.height}"
-                  class="w-16 px-1 py-0.5 border border-gray-400 rounded-md text-center" />
-              </div>
-              <button
-                id="resize-bitmap"
-                class="bg-blue-300 border border-gray-400 rounded-md px-2 py-1"
-                @click=${resizeBitmap}>
-                Resize
-              </button>
-              <button
-                id="clear-bitmap"
-                class="bg-red-300 border border-gray-400 rounded-md px-2 py-1"
-                @click=${clearBitmap}>
-                Clear
-              </button>
-            </div>
-            <div
-              id="coordinates"
-              class="ml-auto font-mono text-sm text-gray-600">
-              X: 0, Y: 0
-            </div>
-          </div>
+    // Create the modal HTML structure
+    const modalHTML = `
+      <div class="bg-gray-200 p-2 mb-10 inline-block shadow-lg rounded-md border border-gray-400 mr-4">
+        <div class="flex justify-between items-center text-gray-800 mb-2 px-2">
+          <div class="text-lg font-semibold">Edit Bitmap</div>
+          <button id="close-modal" class="bg-gray-300 border border-gray-400 rounded-md px-2 py-0.5 text-sm">Close</button>
         </div>
-      `;
+        <div class="relative">
+          <canvas id="bitmap-canvas" class="[image-rendering:pixelated] mt-2 mb-2 border border-black"></canvas>
+          <svg id="bitmap-overlay" class="absolute top-0 left-0 pointer-events-none" style="z-index: 10;"></svg>
+        </div>
+        <div class="flex items-center mb-2">
+          <div class="flex gap-2 items-center">
+            <button id="clear-bitmap" class="bg-red-300 border border-gray-400 rounded-md px-2 py-1">Clear</button>
+          </div>
+          <div id="coordinates" class="ml-auto font-mono text-sm text-gray-600">X: 0, Y: 0</div>
+        </div>
+      </div>
+    `;
 
-      render(template, container);
+    // Render the modal
+    container.innerHTML = modalHTML;
 
-      // After rendering, get the canvas and draw the bitmap
-      const canvas = container.querySelector("#bitmap-canvas");
-      const ctx = canvas.getContext("2d");
-      renderBitmap(ctx);
-    };
+    // Get references to DOM elements
+    const canvas = container.querySelector("#bitmap-canvas");
+    const overlay = container.querySelector("#bitmap-overlay");
+    const coordinatesElement = container.querySelector("#coordinates");
+    const closeButton = container.querySelector("#close-modal");
+    const clearButton = container.querySelector("#clear-bitmap");
+
+    // Set canvas dimensions
+    canvas.width = bitmap.width * pixelSize;
+    canvas.height = bitmap.height * pixelSize;
+    canvas.style.width = `${bitmap.width * pixelSize}px`;
+    canvas.style.height = `${bitmap.height * pixelSize}px`;
+
+    // Create highlight elements
+    const rowHighlight = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "rect"
+    );
+    rowHighlight.id = "row-highlight";
+    rowHighlight.setAttribute("fill", "rgba(0, 119, 255, 0.05)");
+    rowHighlight.setAttribute("x", "0");
+    rowHighlight.setAttribute("y", "0");
+    rowHighlight.setAttribute("width", "0");
+    rowHighlight.setAttribute("height", "0");
+
+    const colHighlight = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "rect"
+    );
+    colHighlight.id = "col-highlight";
+    colHighlight.setAttribute("fill", "rgba(0, 119, 255, 0.05)");
+    colHighlight.setAttribute("x", "0");
+    colHighlight.setAttribute("y", "0");
+    colHighlight.setAttribute("width", "0");
+    colHighlight.setAttribute("height", "0");
+
+    const cellHighlight = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "rect"
+    );
+    cellHighlight.id = "cell-highlight";
+    cellHighlight.setAttribute("fill", "rgba(0, 119, 255, 0.15)");
+    cellHighlight.setAttribute("stroke", "rgba(0, 119, 255, 0.5)");
+    cellHighlight.setAttribute("stroke-width", "1");
+    cellHighlight.setAttribute("x", "0");
+    cellHighlight.setAttribute("y", "0");
+    cellHighlight.setAttribute("width", pixelSize);
+    cellHighlight.setAttribute("height", pixelSize);
+    cellHighlight.style.display = "none";
+
+    // Add highlight elements to overlay
+    overlay.appendChild(rowHighlight);
+    overlay.appendChild(colHighlight);
+    overlay.appendChild(cellHighlight);
+
+    // Set SVG dimensions
+    overlay.setAttribute("width", bitmap.width * pixelSize);
+    overlay.setAttribute("height", bitmap.height * pixelSize);
 
     // Render bitmap on canvas
     const renderBitmap = (ctx) => {
       if (!ctx) {
-        const canvas = container.querySelector("#bitmap-canvas");
         ctx = canvas.getContext("2d");
       }
 
@@ -191,7 +159,6 @@ export const bitmap = {
 
     // Utility functions
     const canvasToBitmapCoords = (clientX, clientY) => {
-      const canvas = container.querySelector("#bitmap-canvas");
       const rect = canvas.getBoundingClientRect();
       const x = Math.floor((clientX - rect.left) / pixelSize);
       const y = Math.floor((clientY - rect.top) / pixelSize);
@@ -231,19 +198,21 @@ export const bitmap = {
       };
 
       // Re-render the bitmap
-      const canvas = container.querySelector("#bitmap-canvas");
-      renderBitmap(canvas.getContext("2d"));
+      renderBitmap();
     };
 
     // Drawing functions
-    const brushTool = ([x, y], paletteIndex) => {
-      const indexToFill = paletteIndexAt([x, y]);
-      if (indexToFill === paletteIndex) return [];
-      return [[x, y, paletteIndex]];
+    const brushTool = ([x, y]) => {
+      const currentValue = paletteIndexAt([x, y]);
+      // Set draw mode based on initial click
+      drawMode = currentValue === 0;
+      return [[x, y, drawMode ? 1 : 0]];
     };
 
-    const lineTool = ([x0, y0], [x1, y1], paletteIndex) => {
+    const lineTool = ([x0, y0], [x1, y1]) => {
       const changes = [];
+      const targetValue = drawMode ? 1 : 0;
+
       if (Math.abs(x0 - x1) > Math.abs(y0 - y1)) {
         if (x0 > x1)
           [[x0, y0], [x1, y1]] = [
@@ -252,7 +221,7 @@ export const bitmap = {
           ];
         const slope = (y1 - y0) / (x1 - x0);
         for (let [x, y] = [x0, y0]; x <= x1; x++) {
-          changes.push([x, Math.round(y), paletteIndex]);
+          changes.push([x, Math.round(y), targetValue]);
           y += slope;
         }
       } else {
@@ -263,7 +232,7 @@ export const bitmap = {
           ];
         const slope = (x1 - x0) / (y1 - y0);
         for (let [x, y] = [x0, y0]; y <= y1; y++) {
-          changes.push([Math.round(x), y, paletteIndex]);
+          changes.push([Math.round(x), y, targetValue]);
           x += slope;
         }
       }
@@ -271,12 +240,6 @@ export const bitmap = {
     };
 
     const updateHighlights = (x, y) => {
-      const overlay = container.querySelector("#bitmap-overlay");
-      const rowHighlight = overlay.querySelector("#row-highlight");
-      const colHighlight = overlay.querySelector("#col-highlight");
-      const cellHighlight = overlay.querySelector("#cell-highlight");
-      const coordinatesElement = container.querySelector("#coordinates");
-
       // Update coordinates display
       if (x >= 0 && x < bitmap.width && y >= 0 && y < bitmap.height) {
         coordinatesElement.textContent = `X: ${x}, Y: ${y}`;
@@ -310,13 +273,14 @@ export const bitmap = {
       }
     };
 
+    // Event handlers
     const handleMouseDown = (event) => {
       isDrawing = true;
       startPos = canvasToBitmapCoords(event.clientX, event.clientY);
       lastPos = [...startPos];
 
       // Apply brush immediately
-      const changes = brushTool(startPos, 1);
+      const changes = brushTool(startPos);
       applyChanges(changes);
     };
 
@@ -327,12 +291,12 @@ export const bitmap = {
       if (!isDrawing) return;
 
       // For brush, we want to create a smooth line between last position and current
-      const changes = lineTool(lastPos, [x, y], 1);
+      const changes = lineTool(lastPos, [x, y]);
       applyChanges(changes);
       lastPos = [x, y];
     };
 
-    const handleMouseUp = (event) => {
+    const handleMouseUp = () => {
       isDrawing = false;
     };
 
@@ -340,14 +304,10 @@ export const bitmap = {
       isDrawing = false;
 
       // Hide highlights
-      const overlay = container.querySelector("#bitmap-overlay");
-      const rowHighlight = overlay.querySelector("#row-highlight");
-      const colHighlight = overlay.querySelector("#col-highlight");
       rowHighlight.style.display = "none";
       colHighlight.style.display = "none";
 
       // Reset coordinates
-      const coordinatesElement = container.querySelector("#coordinates");
       coordinatesElement.textContent = `X: -, Y: -`;
     };
 
@@ -361,88 +321,57 @@ export const bitmap = {
         ...bitmap,
         data: newData,
       };
-      const canvas = container.querySelector("#bitmap-canvas");
-      renderBitmap(canvas.getContext("2d"));
+      renderBitmap();
     };
 
-    const resizeBitmap = () => {
-      const widthInput = container.querySelector("#bitmap-width");
-      const heightInput = container.querySelector("#bitmap-height");
-      const newWidth = parseInt(widthInput.value, 10);
-      const newHeight = parseInt(heightInput.value, 10);
+    // Add event listeners
+    canvas.addEventListener("mousedown", handleMouseDown);
+    canvas.addEventListener("mousemove", handleMouseMove);
+    canvas.addEventListener("mouseup", handleMouseUp);
+    canvas.addEventListener("mouseleave", handleMouseLeave);
+    closeButton.addEventListener("click", close);
+    clearButton.addEventListener("click", clearBitmap);
 
-      if (
-        isNaN(newWidth) ||
-        isNaN(newHeight) ||
-        newWidth < 1 ||
-        newHeight < 1 ||
-        newWidth > 64 ||
-        newHeight > 64
-      ) {
-        alert("Width and height must be between 1 and 64");
-        return;
-      }
-
-      const newData = Array(newWidth * newHeight).fill(0);
-
-      for (let y = 0; y < Math.min(bitmap.height, newHeight); y++) {
-        for (let x = 0; x < Math.min(bitmap.width, newWidth); x++) {
-          const oldIndex = x + y * bitmap.width;
-          const newIndex = x + y * newWidth;
-          newData[newIndex] = bitmap.data[oldIndex];
-        }
-      }
-
-      updateControl("bitmap", {
-        width: newWidth,
-        height: newHeight,
-        data: newData,
-      });
-
-      bitmap = {
-        width: newWidth,
-        height: newHeight,
-        data: newData,
-      };
-
-      renderModal();
-    };
-
-    // Function to generate grid lines SVG elements
-    const renderGridLines = (width, height, pixelSize) => {
-      const lines = [];
+    // Render grid lines
+    const renderGridLines = () => {
+      // Clear existing grid lines
+      const existingLines = overlay.querySelectorAll("line");
+      existingLines.forEach((line) => line.remove());
 
       // Vertical grid lines
-      for (let x = 1; x < width; x++) {
-        lines.push(svg`
-          <line
-            x1="${x * pixelSize}"
-            y1="0"
-            x2="${x * pixelSize}"
-            y2="${height * pixelSize}"
-            stroke="rgba(0, 0, 0, 0.5)"
-            stroke-width="1" />
-        `);
+      for (let x = 1; x < bitmap.width; x++) {
+        const line = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "line"
+        );
+        line.setAttribute("x1", x * pixelSize);
+        line.setAttribute("y1", "0");
+        line.setAttribute("x2", x * pixelSize);
+        line.setAttribute("y2", bitmap.height * pixelSize);
+        line.setAttribute("stroke", "rgba(0, 0, 0, 0.5)");
+        line.setAttribute("stroke-width", "1");
+        overlay.appendChild(line);
       }
 
       // Horizontal grid lines
-      for (let y = 1; y < height; y++) {
-        lines.push(svg`
-          <line
-            x1="0"
-            y1="${y * pixelSize}"
-            x2="${width * pixelSize}"
-            y2="${y * pixelSize}"
-            stroke="rgba(0, 0, 0, 0.5)"
-            stroke-width="1" />
-        `);
+      for (let y = 1; y < bitmap.height; y++) {
+        const line = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "line"
+        );
+        line.setAttribute("x1", "0");
+        line.setAttribute("y1", y * pixelSize);
+        line.setAttribute("x2", bitmap.width * pixelSize);
+        line.setAttribute("y2", y * pixelSize);
+        line.setAttribute("stroke", "rgba(0, 0, 0, 0.5)");
+        line.setAttribute("stroke-width", "1");
+        overlay.appendChild(line);
       }
-
-      return lines;
     };
 
     // Initialize the modal
-    renderModal();
+    renderGridLines();
+    renderBitmap();
   },
   init(options = {}) {
     return {
