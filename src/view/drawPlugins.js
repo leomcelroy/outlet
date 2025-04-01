@@ -46,9 +46,9 @@ export function drawPlugins(state) {
                 });
                 state.dispatch({ type: "OPEN_PLUGIN_MODAL", pluginId: null });
               }}
-              class="px-2 text-xs text-gray-500 hover:text-red-600 cursor-pointer"
+              class="text-gray-400 hover:text-red-500 text-sm px-1 cursor-pointer"
             >
-              Delete
+              ×
             </button>
           </div>
         </div>

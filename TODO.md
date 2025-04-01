@@ -133,3 +133,51 @@ evaluated it is
   }
 }
 ```
+
+### possible path
+
+```js
+{
+  id: string,
+  type: "path",
+  data: [
+    {
+      cmd: "move",
+      point: pointId
+    },
+    {
+      cmd: "line",
+      point: pointId
+    },
+    {
+      cmd: "cubic",
+      point: pointId
+    },
+    {
+      cmd: "end", // goes to last move command
+      point: pointId
+    },
+    {
+      cmd: "move",
+      point: pointId
+    },
+    {
+      cmd: "line",
+      point: pointId
+    },
+    {
+      cmd: "cubic",
+      point: pointId
+    },
+    {
+      cmd: "end", // goes to last move command
+      point: pointId
+    },
+  ],
+  attributes: {
+    fill: "black",
+    etc...
+  }
+}
+
+```

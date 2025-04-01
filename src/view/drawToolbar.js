@@ -1,5 +1,59 @@
 import { html } from "lit-html";
-import { stroke } from "../plugins/stroke.js";
+
+function drawEditingToolbar(state) {
+  return html`
+    <button
+      ?data-active=${state.tool === "SELECT"}
+      @click=${(e) => {
+        state.tool = "SELECT";
+      }}
+      class="data-[active]:bg-indigo-500 data-[active]:text-white hover:bg-indigo-400 bg-gray-400 text-black py-1 px-2 rounded shadow-md text-sm"
+    >
+      Select (s)
+    </button>
+    <button
+      ?data-active=${state.tool === "DRAW_PATH"}
+      @click=${(e) => {
+        state.tool = "DRAW_PATH";
+      }}
+      class="data-[active]:bg-indigo-500 data-[active]:text-white hover:bg-indigo-400 bg-gray-400 text-black py-1 px-2 rounded shadow-md text-sm"
+    >
+      Draw (d)
+    </button>
+    <button
+      @click=${(e) => {
+        state.editingPath = null;
+        state.selectedGeometry = new Set();
+      }}
+      class="hover:bg-indigo-400 bg-gray-400 text-black py-1 px-2 rounded shadow-md text-sm"
+    >
+      Exit Path Edit (Esc)
+    </button>
+  `;
+}
+
+function drawNormalToolbar(state) {
+  return html`
+    <button
+      ?data-active=${state.tool === "SELECT"}
+      @click=${(e) => {
+        state.dispatch({ type: "SET_TOOL", tool: "SELECT" });
+      }}
+      class="data-[active]:bg-indigo-500 data-[active]:text-white hover:bg-indigo-400 bg-gray-400 text-black py-1 px-2 rounded shadow-md text-sm"
+    >
+      Select (s)
+    </button>
+    <button
+      ?data-active=${state.tool === "DRAW_PATH"}
+      @click=${(e) => {
+        state.tool = "DRAW_PATH";
+      }}
+      class="data-[active]:bg-indigo-500 data-[active]:text-white hover:bg-indigo-400 bg-gray-400 text-black py-1 px-2 rounded shadow-md text-sm"
+    >
+      Draw (d)
+    </button>
+  `;
+}
 
 export function drawToolbar(state) {
   return html`
@@ -8,54 +62,8 @@ export function drawToolbar(state) {
     >
       <div class="flex space-x-2">
         ${state.editingPath
-          ? html`
-              <button
-                @click=${(e) => {
-                  state.editingPath = null;
-                  state.selectedGeometry = new Set();
-                }}
-                class="hover:bg-indigo-400 bg-gray-400 text-black py-1 px-2 rounded shadow-md text-sm"
-              >
-                Exit Path Edit (Esc)
-              </button>
-            `
-          : html`
-              <button
-                ?data-active=${state.tool === "SELECT"}
-                @click=${(e) => {
-                  state.dispatch({ type: "SET_TOOL", tool: "SELECT" });
-                }}
-                class="data-[active]:bg-indigo-500 data-[active]:text-white hover:bg-indigo-400 bg-gray-400 text-black py-1 px-2 rounded shadow-md text-sm"
-              >
-                Select (s)
-              </button>
-              <button
-                ?data-active=${state.tool === "DRAW"}
-                @click=${(e) => {
-                  state.tool = "DRAW";
-                }}
-                class="data-[active]:bg-indigo-500 data-[active]:text-white hover:bg-indigo-400 bg-gray-400 text-black py-1 px-2 rounded shadow-md text-sm"
-              >
-                Draw (d)
-              </button>
-              <button
-                ?data-active=${state.tool === "DRAW_PATH"}
-                @click=${(e) => {
-                  state.tool = "DRAW_PATH";
-                }}
-                class="data-[active]:bg-indigo-500 data-[active]:text-white hover:bg-indigo-400 bg-gray-400 text-black py-1 px-2 rounded shadow-md text-sm"
-              >
-                Draw Path (p)
-              </button>
-              <button
-                @click=${(e) => {
-                  state.dispatch({ type: "CLEAR" });
-                }}
-                class="hover:bg-indigo-400 bg-gray-400 text-black py-1 px-2 rounded shadow-md text-sm"
-              >
-                Clear
-              </button>
-            `}
+          ? drawEditingToolbar(state)
+          : drawNormalToolbar(state)}
       </div>
     </div>
   `;
