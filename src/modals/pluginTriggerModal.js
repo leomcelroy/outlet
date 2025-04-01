@@ -191,11 +191,7 @@ export function pluginTriggerModal(plugin, layer) {
                   layer || STATE.layers.find((l) => l.id === STATE.activeLayer);
 
                 // Execute the plugin with the collected control values
-                process(
-                  controlValues,
-                  layer.inputGeometry,
-                  activeLayer.attributes
-                );
+                process(controlValues, layer.inputGeometry);
 
                 evaluateAllLayers();
                 remove();

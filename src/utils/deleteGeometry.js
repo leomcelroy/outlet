@@ -35,7 +35,45 @@ export function deleteGeometry(state) {
       );
 
       if (hasSelectedPoints) {
-        toRemove.add(g.id);
+        // Filter out commands that reference selected points
+        const validCommands = g.data.filter((cmd) => {
+          return !(
+            (cmd.point && selectedPoints.has(cmd.point)) ||
+            (cmd.control1 && selectedPoints.has(cmd.control1)) ||
+            (cmd.control2 && selectedPoints.has(cmd.control2))
+          );
+        });
+
+        // If we have valid commands, update the path data
+        if (validCommands.length > 0) {
+          // Make sure the first command is a 'move' command
+          if (validCommands[0].cmd !== "move") {
+            validCommands[0] = {
+              point: validCommands[0].point,
+              cmd: "move",
+            };
+          }
+
+          // Filter out consecutive close commands
+          const filteredCommands = validCommands.filter((cmd, index, array) => {
+            if (cmd.cmd !== "close") return true;
+            // Keep the close command if the previous command isn't also a close
+            return index === 0 || array[index - 1].cmd !== "close";
+          });
+
+          // Check if path has any line commands (not just move/close)
+          const hasLineCommands = filteredCommands.some(
+            (cmd) => cmd.cmd !== "move" && cmd.cmd !== "close"
+          );
+
+          if (hasLineCommands) {
+            g.data = filteredCommands;
+          } else {
+            toRemove.add(g.id);
+          }
+        } else {
+          toRemove.add(g.id);
+        }
       }
     }
   });
@@ -49,48 +87,12 @@ export function deleteGeometry(state) {
       usedPoints.add(g.p1);
       usedPoints.add(g.p2);
     } else if (g.type === "path") {
-      // First collect all points that are used in commands that don't reference selected points
-      const validCommands = [];
+      // Add all points used in the path commands
       g.data.forEach((cmd) => {
-        const referencesSelectedPoint =
-          (cmd.point && selectedPoints.has(cmd.point)) ||
-          (cmd.control1 && selectedPoints.has(cmd.control1)) ||
-          (cmd.control2 && selectedPoints.has(cmd.control2));
-
-        if (!referencesSelectedPoint) {
-          validCommands.push(cmd);
-          if (cmd.point) usedPoints.add(cmd.point);
-          if (cmd.control1) usedPoints.add(cmd.control1);
-          if (cmd.control2) usedPoints.add(cmd.control2);
-        }
+        if (cmd.point) usedPoints.add(cmd.point);
+        if (cmd.control1) usedPoints.add(cmd.control1);
+        if (cmd.control2) usedPoints.add(cmd.control2);
       });
-
-      // If we have valid commands, update the path data
-      if (validCommands.length > 1) {
-        // Make sure the first command is a 'move' command
-        if (validCommands[0].cmd !== "move" && validCommands.length > 0) {
-          validCommands[0] = {
-            x: validCommands[0].x,
-            y: validCommands[0].y,
-            cmd: "move",
-          };
-        }
-
-        // Check if path only contains move and close commands
-        const onlyMoveAndClose = validCommands.every(
-          (cmd) => cmd.cmd === "move" || cmd.cmd === "close"
-        );
-
-        if (onlyMoveAndClose) {
-          // Remove path if it's just move and close
-          toRemove.add(g.id);
-        } else {
-          g.data = validCommands;
-        }
-      } else {
-        // If no valid commands remain, mark the path for removal
-        toRemove.add(g.id);
-      }
     }
   });
 

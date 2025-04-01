@@ -1,5 +1,4 @@
 import { render } from "lit-html";
-
 import { addPanZoom } from "./events/addPanZoom.js";
 import { addSketching } from "./events/addSketching.js";
 import { addPtDragging } from "./events/addPtDragging.js";
@@ -11,107 +10,34 @@ import { addLayerDrag } from "./events/addLayerDrag.js";
 import { addPluginDrag } from "./events/addPluginDrag.js";
 import { addPathDrag } from "./events/addPathDrag.js";
 import { addPathDrawing } from "./events/addPathDrawing.js";
-
 import { deleteGeometry } from "./utils/deleteGeometry.js";
-
 import { hitEsc } from "./utils/hitEsc.js";
-
+import { moveLayer } from "./actions/moveLayer.js";
+import { movePath } from "./actions/movePath.js";
 import { view } from "./view/view.js";
-
+import { evaluateAllLayers } from "./evaluateAllLayers.js";
+import { pluginSearch } from "./modals/pluginSearch.js";
+import { pluginControlModal } from "./modals/pluginControlModal.js";
 import { fill } from "./plugins/fill.js";
 import { stroke } from "./plugins/stroke.js";
 import { testDup } from "./plugins/testDup.js";
 import { exportDST } from "./plugins/exportDST.js";
 import { demoModal } from "./plugins/customModalDemo.js";
-
-import { evaluateAllLayers } from "./evaluateAllLayers.js";
-
-import { pluginSearch } from "./modals/pluginSearch.js";
-import { pluginControlModal } from "./modals/pluginControlModal.js";
-
-import { moveLayer } from "./actions/moveLayer.js";
-import { movePath } from "./actions/movePath.js";
-
 import { bitmap } from "./plugins/bitmap.js";
+import { raster } from "./plugins/raster.js";
 
 export const STATE = {
   tool: "SELECT",
   params: {},
   selectedGeometry: new Set(),
-  sketches: [
-    /*
-    {
-      id: "SKETCH_1",
-      layer: "layerId",
-      parameters: {
-        parameterId: number,
-      },
-      points: {
-        pointId: {
-          x: parameterId,
-          y: parameterId,
-        },
-      },
-      paths: [
-        {
-          id,
-          data: [
-            {
-              cmd: "start",
-              point: pointId,
-            },
-            {
-             cmd: "line",
-             point: pointId,
-            },
-            {
-              cmd: "cubic",
-              point: pointId,
-              control1: pointId,
-              control2: pointId
-            },
-            {
-              cmd: "end"
-            }
-          ]
-        }
-      ],
-      attributes: {
-        stroke: "black",
-        fill: "none"
-      },
-    },
-    */
-  ],
   geometries: [],
   layers: [
     {
       id: "DEFAULT_LAYER",
       name: "Default Layer",
       parent: null,
-      children: ["LAYER_1"],
-      plugins: [stroke.init({ color: "red" })],
-      attributes: {},
-      outputGeometry: [],
-      inputGeometry: [],
-    },
-    {
-      id: "LAYER_1",
-      name: "Layer 1",
-      parent: "DEFAULT_LAYER",
       children: [],
-      plugins: [stroke.init({ color: "black" })],
-      attributes: {},
-      outputGeometry: [],
-      inputGeometry: [],
-    },
-    {
-      id: "LAYER_2",
-      name: "Layer 2",
-      parent: null,
-      children: [],
-      plugins: [testDup.init()],
-      attributes: {},
+      plugins: [],
       outputGeometry: [],
       inputGeometry: [],
     },
@@ -125,7 +51,7 @@ export const STATE = {
   grid: true,
   adaptiveGrid: false,
   panZoomMethods: null,
-  plugins: [fill, stroke, testDup, exportDST, demoModal, bitmap],
+  plugins: [fill, stroke, testDup, exportDST, demoModal, bitmap, raster],
   currentPath: null,
   editingPath: null,
   dispatch(args) {
@@ -158,7 +84,6 @@ export const STATE = {
           parent: null,
           children: [],
           plugins: [],
-          attributes: {},
           outputGeometry: [],
           inputGeometry: [],
         });
@@ -169,12 +94,10 @@ export const STATE = {
       case "OPEN_PLUGIN_MODAL": {
         const { pluginId } = args;
         STATE.openPluginModal = pluginId;
-        if (pluginId) {
-          const container = document.querySelector(
-            "[modal-controls-container]"
-          );
-          container.innerHTML = "";
+        const container = document.querySelector("[modal-controls-container]");
+        container.innerHTML = "";
 
+        if (pluginId) {
           const activeLayer = STATE.layers.find(
             (layer) => layer.id === STATE.activeLayer
           );
@@ -222,6 +145,7 @@ export const STATE = {
         );
         evaluateAllLayers();
         STATE.openPluginModal = null;
+        STATE.dispatch({ type: "OPEN_PLUGIN_MODAL", pluginId: null });
         break;
       }
       case "ADD_PLUGIN": {
@@ -304,7 +228,6 @@ export const STATE = {
             parent: null,
             children: [],
             plugins: [stroke.init({ color: "black" })],
-            attributes: {},
             outputGeometry: [],
             inputGeometry: [],
           },

@@ -47,8 +47,8 @@ function drawLines(state, lines, layer) {
       data-id=${line.id}
       ?data-selected=${state.selectedGeometry.has(line.id)}
       class="hover:stroke-orange-500 data-[selected]:stroke-red-500"
-      stroke=${layer.attributes.stroke || "black"}
-      stroke-width=${layer.attributes.strokeWidth || PT_SIZE * 0.6}
+      stroke=${"black"}
+      stroke-width=${PT_SIZE * 0.6}
       vector-effect="non-scaling-stroke"
       x1=${line.x1}
       y1=${line.y1}
@@ -82,13 +82,9 @@ function drawPaths(state, paths, layer) {
         class="hover:stroke-orange-500 data-[selected]:stroke-red-500"
         d=${pathData}
         fill-rule=${path.attributes?.fillRule || "evenodd"}
-        fill=${path.attributes?.fill || layer.attributes.fill || "none"}
-        stroke=${path.attributes?.stroke || layer.attributes.stroke || "black"}
-        stroke-width=${
-          path.attributes?.strokeWidth ||
-          layer.attributes.strokeWidth ||
-          PT_SIZE * 0.6
-        }
+        fill=${path.attributes?.fill || "none"}
+        stroke=${path.attributes?.stroke || "black"}
+        stroke-width=${path.attributes?.strokeWidth || PT_SIZE * 0.6}
         vector-effect="non-scaling-stroke"
       />
     `;

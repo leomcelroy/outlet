@@ -41,7 +41,7 @@ function renderLayerTree(tree, state) {
           <button
             @click=${() =>
               state.dispatch({ type: "TOGGLE_LAYER", layerId: node.id })}
-            class="mx-1 w-3 h-3 text-xs rounded-xs hover:bg-gray-200 cursor-pointer"
+            class="mx-[2.5px] w-3 h-3 text-xs rounded-xs hover:bg-gray-200 cursor-pointer"
           >
             ${isExpanded
               ? svg`<svg width="10" height="10"><path d="M1,3 L9,3 L5,8 Z" fill="currentColor"/></svg>`

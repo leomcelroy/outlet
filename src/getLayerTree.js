@@ -12,7 +12,6 @@ function generateLayerTree(layer, depth = 0) {
     depth,
     children: [],
     geometry: STATE.geometries.filter((geo) => geo.layer === layer.id),
-    attributes: layer.attributes,
     plugins: layer.plugins,
   };
 

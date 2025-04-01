@@ -4,7 +4,6 @@ export function evaluateAllLayers() {
   // Clear out old geometry and attributes
   STATE.layers.forEach((layer) => {
     layer.outputGeometry = [];
-    layer.attributes = {};
     layer.inputGeometry = [];
   });
 

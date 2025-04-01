@@ -181,3 +181,53 @@ evaluated it is
 }
 
 ```
+
+### sketches maybe
+
+```
+  sketches: [
+    /*
+    {
+      id: "SKETCH_1",
+      layer: "layerId",
+      parameters: {
+        parameterId: number,
+      },
+      points: {
+        pointId: {
+          x: parameterId,
+          y: parameterId,
+        },
+      },
+      paths: [
+        {
+          id,
+          data: [
+            {
+              cmd: "start",
+              point: pointId,
+            },
+            {
+             cmd: "line",
+             point: pointId,
+            },
+            {
+              cmd: "cubic",
+              point: pointId,
+              control1: pointId,
+              control2: pointId
+            },
+            {
+              cmd: "end"
+            }
+          ]
+        }
+      ],
+      attributes: {
+        stroke: "black",
+        fill: "none"
+      },
+    },
+    */
+  ],
+```
