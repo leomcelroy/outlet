@@ -29,7 +29,7 @@ export function pluginControlModal() {
 
     const template = html`
       <div
-        class="m-2 border rounded border-gray-300 flex justify-center items-center min-w-40"
+        class="m-2 border rounded border-gray-300 flex justify-center items-center min-w-60"
       >
         <div class="bg-white p-6 rounded shadow-md relative w-full max-w-md">
           <button

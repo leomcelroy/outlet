@@ -42,28 +42,9 @@ export function pluginSearch() {
             />
           </div>
           <div
-            class="overflow-y-scroll max-h-[60vh] relative"
+            class="overflow-y-scroll max-h-[60vh]"
             style="min-height: 200px;"
-            @scroll=${(e) => {
-              const element = e.target;
-              const hasMoreContent =
-                element.scrollHeight > element.clientHeight;
-              const isScrolledToBottom =
-                element.scrollHeight - element.scrollTop ===
-                element.clientHeight;
-
-              // Add or remove the gradient overlay based on scroll position
-              if (hasMoreContent && !isScrolledToBottom) {
-                element.style.setProperty("--show-gradient", "1");
-              } else {
-                element.style.setProperty("--show-gradient", "0");
-              }
-            }}
           >
-            <div
-              class="absolute bottom-0 left-0 right-0 h-8 pointer-events-none"
-              style="background: linear-gradient(to bottom, transparent, rgba(255,255,255,1)); opacity: var(--show-gradient, 0);"
-            ></div>
             ${filteredPlugins.map(
               (plugin) => html`
                 <div
@@ -94,12 +75,19 @@ export function pluginSearch() {
                 </div>
               `
             )}
+            <div class="h-16"></div>
           </div>
+          <div
+            class="absolute bottom-0 left-0 right-0 h-24 pointer-events-none"
+            style="background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0.8), rgba(255,255,255,1));"
+          ></div>
         </div>
       </div>
     `;
     render(template, container);
   };
+
+  STATE.searchQuery = "";
 
   update();
 

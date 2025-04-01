@@ -28,6 +28,8 @@ import { scale } from "./plugins/scale.js";
 import { rasterPath } from "./plugins/rasterPath.js";
 import { rotate } from "./plugins/rotate.js";
 import { translate } from "./plugins/translate.js";
+import { align } from "./plugins/align.js";
+import { distribute } from "./plugins/distribute.js";
 
 export const STATE = {
   tool: "SELECT",
@@ -60,12 +62,14 @@ export const STATE = {
     translate,
     rotate,
     scale,
+    align,
+    distribute,
     testDup,
     // demoModal,
     bitmap,
     raster,
-    exportDST,
     rasterPath,
+    exportDST,
   ],
   currentPath: null,
   editingPath: null,
@@ -369,13 +373,53 @@ export function init() {
     }
 
     state.geometries.forEach((g) => {
-      if (g.type === "point" && editingPathPoints.has(g.id)) {
-        const x = state.params[g.x];
-        const y = state.params[g.y];
+      if (state.editingPath) {
+        // When editing a path, only select points
+        if (g.type === "point" && editingPathPoints.has(g.id)) {
+          const x = state.params[g.x];
+          const y = state.params[g.y];
 
-        if (!contains(x, y)) return;
+          if (!contains(x, y)) return;
 
-        state.selectedGeometry.add(g.id);
+          state.selectedGeometry.add(g.id);
+        }
+      } else {
+        // When not editing a path, select all geometry types
+        if (g.type === "point") {
+          const x = state.params[g.x];
+          const y = state.params[g.y];
+          if (contains(x, y)) {
+            state.selectedGeometry.add(g.id);
+          }
+        } else if (g.type === "line") {
+          const p1 = state.geometries.find((p) => p.id === g.p1);
+          const p2 = state.geometries.find((p) => p.id === g.p2);
+          if (p1 && p2) {
+            const x1 = state.params[p1.x];
+            const y1 = state.params[p1.y];
+            const x2 = state.params[p2.x];
+            const y2 = state.params[p2.y];
+
+            // Check if either endpoint is in the selection box
+            if (contains(x1, y1) || contains(x2, y2)) {
+              state.selectedGeometry.add(g.id);
+            }
+          }
+        } else if (g.type === "path") {
+          // For paths, check if any point in the path is in the selection box
+          const hasPointInBox = g.data.some((cmd) => {
+            if (!cmd.point) return false;
+            const point = state.geometries.find((p) => p.id === cmd.point);
+            if (!point) return false;
+            const x = state.params[point.x];
+            const y = state.params[point.y];
+            return contains(x, y);
+          });
+
+          if (hasPointInBox) {
+            state.selectedGeometry.add(g.id);
+          }
+        }
       }
     });
   });
