@@ -4,24 +4,52 @@ const type = "bitmap";
 const name = "Bitmap";
 
 const testBitmap = {
-  width: 5,
-  height: 5,
+  width: 16,
+  height: 16,
   data: [
-    [1, 1, 1, 0, 0],
-    [1, 1, 1, 0, 0],
-    [0, 1, 0, 0, 0],
-    [0, 1, 0, 1, 1],
-    [0, 0, 0, 0, 1],
-  ].flat(),
+    // Row 1
+    0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,
+    // Row 2
+    0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,
+    // Row 3
+    0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
+    // Row 4
+    0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0,
+    // Row 5
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    // Row 6
+    1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1,
+    // Row 7
+    1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1,
+    // Row 8
+    1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1,
+    // Row 9
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+    // Row 10
+    0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0,
+    // Row 11
+    0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+    // Row 12
+    0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
+    // Row 13
+    0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
+    // Row 14
+    0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,
+    // Row 15
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    // Row 16
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  ],
 };
 
 export const bitmap = {
   type,
   name,
-  customModal: ({ container, updateControl, close }) => {
+  customModal: ({ container, updateControl, close, controls }) => {
     container.innerHTML = `
-      <div class="w-20 bg-gray-200 p-2 mb-10">
+      <div class="bg-gray-200 p-2 mb-10 inline-block shadow-lg rounded-md border border-gray-400">
         <div>Edit bitmap</div>
+        <canvas id="bitmap-canvas" class="[image-rendering:pixelated] mt-2 mb-2 border border-black"></canvas>
         <button class="bg-gray-300 border border-gray-400 rounded-md px-2 py-1">
           Close
         </button>
@@ -30,6 +58,73 @@ export const bitmap = {
 
     container.querySelector("button").addEventListener("click", () => {
       close();
+    });
+
+    const bitmap = controls.find((c) => c.id === "bitmap").value;
+
+    const canvas = container.querySelector("#bitmap-canvas");
+    const ctx = canvas.getContext("2d");
+
+    // Set canvas dimensions to match bitmap dimensions
+    const pixelSize = 30; // Size of each pixel in the canvas
+    canvas.width = bitmap.width * pixelSize;
+    canvas.height = bitmap.height * pixelSize;
+    canvas.style.width = `${bitmap.width * pixelSize}px`;
+    canvas.style.height = `${bitmap.height * pixelSize}px`;
+
+    // Function to render the current bitmap state
+    function renderBitmap() {
+      // Clear canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw the bitmap pixels
+      for (let y = 0; y < bitmap.height; y++) {
+        for (let x = 0; x < bitmap.width; x++) {
+          const pixelValue = bitmap.data[x + y * bitmap.width];
+          if (pixelValue === 1) {
+            ctx.fillStyle = "black";
+            ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+          } else {
+            ctx.fillStyle = "white";
+            ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+          }
+        }
+      }
+    }
+
+    // Initial render
+    renderBitmap();
+
+    // Add click event listener to toggle cells
+    canvas.addEventListener("click", (event) => {
+      // Get click coordinates relative to canvas
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.floor((event.clientX - rect.left) / pixelSize);
+      const y = Math.floor((event.clientY - rect.top) / pixelSize);
+
+      // Make sure the coordinates are within bounds
+      if (x >= 0 && x < bitmap.width && y >= 0 && y < bitmap.height) {
+        // Create a copy of the bitmap data
+        const newData = [...bitmap.data];
+        // Toggle the cell (0 -> 1, 1 -> 0)
+        const index = x + y * bitmap.width;
+        newData[index] = bitmap.data[index] === 1 ? 0 : 1;
+
+        // Update the control with the new bitmap data
+        updateControl("bitmap", {
+          ...bitmap,
+          data: newData,
+        });
+
+        // Get the updated control value
+        const updatedBitmap = controls.find((c) => c.id === "bitmap").value;
+
+        // Update our local reference
+        bitmap.data = updatedBitmap.data;
+
+        // Re-render the bitmap
+        renderBitmap();
+      }
     });
   },
   init(options = {}) {
@@ -46,17 +141,17 @@ export const bitmap = {
         {
           id: "bitmap",
           type: "image",
-          value: options.bitmap || "none",
+          value: testBitmap,
         },
       ],
     };
   },
   process(controls, children) {
-    // const { bitmap } = controls;
+    const { bitmap } = controls;
 
-    const bitmap = testBitmap;
     const outlines = boundaries(bitmap);
 
+    console.log("PROCESS");
     return outlines.map((outline) => ({
       type: "path",
       attributes: {
