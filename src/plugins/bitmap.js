@@ -151,19 +151,30 @@ export const bitmap = {
 
     const outlines = boundaries(bitmap);
 
-    console.log("PROCESS");
-    return outlines.map((outline) => ({
-      type: "path",
-      attributes: {
-        fill: "none",
-        stroke: "deeppink",
+    // Create a single path with multiple subpaths
+    const pathData = [];
+
+    // Process each outline into a subpath
+    outlines.forEach((outline) => {
+      // Start a new subpath with a move command
+      pathData.push({ cmd: "move", x: outline[0].x, y: outline[0].y });
+
+      // Add line commands for the rest of the points
+      outline.slice(1).forEach(({ x, y }) => {
+        pathData.push({ cmd: "line", x, y });
+      });
+    });
+
+    pathData.push({ cmd: "close" });
+
+    // Return a single path object containing all subpaths
+    return [
+      {
+        type: "path",
+        attributes: {},
+        data: pathData,
       },
-      data: [
-        { cmd: "start", x: outline[0].x, y: outline[0].y },
-        ...outline.slice(1).map(({ x, y }) => ({ cmd: "line", x, y })),
-        { cmd: "close" },
-      ],
-    }));
+    ];
   },
 };
 
