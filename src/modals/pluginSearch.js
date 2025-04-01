@@ -26,7 +26,7 @@ export function pluginSearch() {
         }}
       >
         <div
-          class="bg-white p-6 rounded shadow-md w-full max-w-md relative flex flex-col"
+          class="bg-white p-6 rounded shadow-md w-full max-w-md relative flex flex-col h-100 overflow-auto"
           style="margin-top: 0; transform: translateY(0);"
         >
           <div class="mb-4">
@@ -41,7 +41,10 @@ export function pluginSearch() {
               }}
             />
           </div>
-          <div class="overflow-y-auto max-h-[60vh]" style="min-height: 200px;">
+          <div
+            class="overflow-y-scroll max-h-[60vh]"
+            style="min-height: 200px;"
+          >
             ${filteredPlugins.map(
               (plugin) => html`
                 <div
@@ -80,4 +83,6 @@ export function pluginSearch() {
   };
 
   update();
+
+  container.querySelector("input").focus();
 }

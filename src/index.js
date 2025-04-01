@@ -51,7 +51,16 @@ export const STATE = {
   grid: true,
   adaptiveGrid: false,
   panZoomMethods: null,
-  plugins: [fill, stroke, testDup, exportDST, demoModal, bitmap, raster, scale],
+  plugins: [
+    fill,
+    stroke,
+    scale,
+    testDup,
+    // demoModal,
+    bitmap,
+    raster,
+    exportDST,
+  ],
   currentPath: null,
   editingPath: null,
   dispatch(args) {
@@ -183,7 +192,6 @@ export const STATE = {
         break;
       }
       case "MOVE_PATH_TO_LAYER": {
-        console.log("MOVE_PATH_TO_LAYER", args);
         const { pathId, targetLayerId } = args;
         movePath(args);
         break;
@@ -282,6 +290,10 @@ export const STATE = {
         if (STATE.activeLayer === layerId) {
           STATE.activeLayer = "DEFAULT_LAYER";
         }
+
+        STATE.dispatch({ type: "OPEN_PLUGIN_MODAL", pluginId: null });
+        STATE.currentPath = null;
+        STATE.editingPath = null;
 
         evaluateAllLayers();
         break;
