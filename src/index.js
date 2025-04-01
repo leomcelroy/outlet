@@ -30,6 +30,7 @@ import { rotate } from "./plugins/rotate.js";
 import { translate } from "./plugins/translate.js";
 import { align } from "./plugins/align.js";
 import { distribute } from "./plugins/distribute.js";
+import { filterSingleCommandPaths } from "./utils/filterSingleCommandPaths.js";
 
 export const STATE = {
   tool: "SELECT",
@@ -67,7 +68,7 @@ export const STATE = {
     testDup,
     // demoModal,
     bitmap,
-    raster,
+    // raster,
     rasterPath,
     exportDST,
   ],
@@ -311,7 +312,7 @@ export const STATE = {
       case "SET_TOOL": {
         const { tool } = args;
         STATE.tool = tool;
-        filterSingleCommandPaths(state);
+        filterSingleCommandPaths(STATE);
         break;
       }
       default:

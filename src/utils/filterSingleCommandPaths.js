@@ -1,4 +1,7 @@
+import { evaluateAllLayers } from "../evaluateAllLayers";
+
 export function filterSingleCommandPaths(state) {
+  return;
   // Filter out paths that only have one command
   state.geometries = state.geometries.filter((geometry) => {
     if (geometry.type !== "path") return true;
@@ -40,4 +43,6 @@ export function filterSingleCommandPaths(state) {
   for (const param in state.params) {
     if (!usedParams.has(param)) delete state.params[param];
   }
+
+  evaluateAllLayers();
 }
