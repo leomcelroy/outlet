@@ -13,6 +13,7 @@ import { addPathDrawing } from "./events/addPathDrawing.js";
 import { addHotKeys } from "./events/addHotKeys.js";
 import { moveLayer } from "./actions/moveLayer.js";
 import { movePath } from "./actions/movePath.js";
+import { duplicateLayer } from "./actions/duplicateLayer.js";
 import { view } from "./view/view.js";
 import { evaluateAllLayers } from "./evaluateAllLayers.js";
 import { pluginSearch } from "./modals/pluginSearch.js";
@@ -31,6 +32,7 @@ import { translate } from "./plugins/translate.js";
 import { align } from "./plugins/align.js";
 import { distribute } from "./plugins/distribute.js";
 import { filterSingleCommandPaths } from "./utils/filterSingleCommandPaths.js";
+import { createRandStr } from "./utils/createRandStr.js";
 
 export const STATE = {
   tool: "SELECT",
@@ -65,7 +67,7 @@ export const STATE = {
     scale,
     align,
     distribute,
-    testDup,
+    // testDup,
     // demoModal,
     bitmap,
     // raster,
@@ -307,6 +309,10 @@ export const STATE = {
         STATE.editingPath = null;
 
         evaluateAllLayers();
+        break;
+      }
+      case "DUPLICATE_LAYER": {
+        duplicateLayer();
         break;
       }
       case "SET_TOOL": {

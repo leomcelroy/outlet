@@ -120,6 +120,15 @@ export function drawTopBar(state) {
           </div>
         </div>
       </div>
+
+      <div
+        @click=${(e) => {
+          state.dispatch({ type: "DUPLICATE_LAYER" });
+        }}
+        class="hover:bg-gray-200 w-fit p-2 cursor-pointer"
+      >
+        Duplicate Layer
+      </div>
     </div>
   `;
 }
