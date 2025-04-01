@@ -1,9 +1,9 @@
 import { createRandStr } from "../utils/createRandStr.js";
 
-const type = "scale";
-const name = "Scale";
+const type = "rotate";
+const name = "Rotate";
 
-export const scale = {
+export const rotate = {
   type,
   name,
   init(options = {}) {
@@ -14,12 +14,12 @@ export const scale = {
       enabled: true,
       controls: [
         {
-          id: "scale",
+          id: "angle",
           type: "number",
-          value: options.scale || 1,
-          min: 0.1,
-          max: 10,
-          step: 0.1,
+          value: options.angle || 0,
+          min: -360,
+          max: 360,
+          step: 1,
         },
         {
           id: "originX",
@@ -45,7 +45,8 @@ export const scale = {
     };
   },
   process(controls, children) {
-    const { scale, originX, originY } = controls;
+    const { angle, originX, originY } = controls;
+    const radians = (angle * Math.PI) / 180;
 
     // Calculate bounds of all paths
     let minX = Infinity,
@@ -94,18 +95,27 @@ export const scale = {
         break;
     }
 
-    // Process paths and scale their data values
+    // Process paths and rotate their data values
     return children.flat().map((path) => ({
       ...path,
-      data: path.data.map((cmd) => ({
-        ...cmd,
-        ...(cmd.x !== undefined
-          ? { x: originXValue + (cmd.x - originXValue) * scale }
-          : {}),
-        ...(cmd.y !== undefined
-          ? { y: originYValue + (cmd.y - originYValue) * scale }
-          : {}),
-      })),
+      data: path.data.map((cmd) => {
+        if (cmd.x === undefined || cmd.y === undefined) return cmd;
+
+        // Translate to origin
+        const x = cmd.x - originXValue;
+        const y = cmd.y - originYValue;
+
+        // Rotate
+        const rotatedX = x * Math.cos(radians) - y * Math.sin(radians);
+        const rotatedY = x * Math.sin(radians) + y * Math.cos(radians);
+
+        // Translate back
+        return {
+          ...cmd,
+          x: rotatedX + originXValue,
+          y: rotatedY + originYValue,
+        };
+      }),
     }));
   },
 };
