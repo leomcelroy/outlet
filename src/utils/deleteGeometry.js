@@ -1,3 +1,5 @@
+import { getPathPoints } from "./getPathPoints.js";
+
 export function deleteGeometry(state) {
   const toRemove = new Set();
 
@@ -27,38 +29,12 @@ export function deleteGeometry(state) {
       }
     } else if (g.type === "path") {
       // Filter out commands that reference selected points
-      const validCommands = g.data.filter((cmd) => {
-        const referencesSelectedPoint =
-          (cmd.point &&
-            (selectedPoints.has(cmd.point) || toRemove.has(cmd.point))) ||
-          (cmd.control1 &&
-            (selectedPoints.has(cmd.control1) || toRemove.has(cmd.control1))) ||
-          (cmd.control2 &&
-            (selectedPoints.has(cmd.control2) || toRemove.has(cmd.control2)));
+      const pathPoints = getPathPoints(g);
+      const hasSelectedPoints = Array.from(pathPoints).some(
+        (pointId) => selectedPoints.has(pointId) || toRemove.has(pointId)
+      );
 
-        return !referencesSelectedPoint;
-      });
-
-      // If we have enough valid commands, update the path
-      if (validCommands.length > 1) {
-        // Make sure the first command is a 'start' command
-        if (validCommands[0].cmd !== "start" && validCommands.length > 0) {
-          validCommands[0] = { point: validCommands[0].point, cmd: "start" };
-        }
-
-        // Check if path only contains start and close commands
-        const onlyStartAndClose = validCommands.every(
-          (cmd) => cmd.cmd === "start" || cmd.cmd === "close"
-        );
-
-        if (onlyStartAndClose) {
-          // Remove path if it's just start and close
-          toRemove.add(g.id);
-        } else {
-          g.data = validCommands;
-        }
-      } else {
-        // If not enough valid commands remain, mark the path for removal
+      if (hasSelectedPoints) {
         toRemove.add(g.id);
       }
     }
@@ -91,18 +67,22 @@ export function deleteGeometry(state) {
 
       // If we have valid commands, update the path data
       if (validCommands.length > 1) {
-        // Make sure the first command is a 'start' command
-        if (validCommands[0].cmd !== "start" && validCommands.length > 0) {
-          validCommands[0] = { point: validCommands[0].point, cmd: "start" };
+        // Make sure the first command is a 'move' command
+        if (validCommands[0].cmd !== "move" && validCommands.length > 0) {
+          validCommands[0] = {
+            x: validCommands[0].x,
+            y: validCommands[0].y,
+            cmd: "move",
+          };
         }
 
-        // Check if path only contains start and close commands
-        const onlyStartAndClose = validCommands.every(
-          (cmd) => cmd.cmd === "start" || cmd.cmd === "close"
+        // Check if path only contains move and close commands
+        const onlyMoveAndClose = validCommands.every(
+          (cmd) => cmd.cmd === "move" || cmd.cmd === "close"
         );
 
-        if (onlyStartAndClose) {
-          // Remove path if it's just start and close
+        if (onlyMoveAndClose) {
+          // Remove path if it's just move and close
           toRemove.add(g.id);
         } else {
           g.data = validCommands;
@@ -123,6 +103,18 @@ export function deleteGeometry(state) {
 
   // Remove all marked geometry
   state.geometries = state.geometries.filter((g) => !toRemove.has(g.id));
+
+  // If currentPath is being removed, clear it
+  if (state.currentPath && toRemove.has(state.currentPath.id)) {
+    state.currentPath = null;
+    state.currentPoint = null;
+  }
+
+  // If editingPath is being removed, clear it
+  if (state.editingPath && toRemove.has(state.editingPath)) {
+    state.editingPath = null;
+    state.selectedGeometry = new Set();
+  }
 
   // Clean up unused parameters
   const usedParams = new Set();

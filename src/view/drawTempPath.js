@@ -9,12 +9,13 @@ export function drawTempPath(state) {
 
   let pathData = "";
   currentPath.data.forEach((cmd) => {
-    if (cmd.cmd === "start") {
+    if (cmd.cmd === "move" || cmd.cmd === "line") {
       const point = state.geometries.find((g) => g.id === cmd.point);
-      pathData += `M ${state.params[point.x]} ${state.params[point.y]} `;
-    } else if (cmd.cmd === "line") {
-      const point = state.geometries.find((g) => g.id === cmd.point);
-      pathData += `L ${state.params[point.x]} ${state.params[point.y]} `;
+      const x = state.params[point.x];
+      const y = state.params[point.y];
+      pathData += `${cmd.cmd === "move" ? "M" : "L"} ${x} ${y} `;
+    } else if (cmd.cmd === "close") {
+      pathData += "Z ";
     }
   });
 

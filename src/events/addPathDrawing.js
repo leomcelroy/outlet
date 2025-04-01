@@ -4,7 +4,7 @@ import { evaluateAllLayers } from "../evaluateAllLayers.js";
 
 export function addPathDrawing(el, state) {
   const listener = createListener(el);
-  let startPointId = null; // Store the starting point ID
+  let currentMoveCmd = null;
 
   function getPoint(e) {
     let rect = el.getBoundingClientRect();
@@ -61,76 +61,110 @@ export function addPathDrawing(el, state) {
     if (state.tool !== "DRAW_PATH") return;
 
     const { x, y } = getPointWithSnap(e);
+    const pointId = addPoint(x, y);
 
-    // Check if we're clicking near the start point
-    if (state.currentPath && startPointId) {
-      const startPoint = state.geometries.find((g) => g.id === startPointId);
-      const startX = state.params[startPoint.x];
-      const startY = state.params[startPoint.y];
+    // Check if we're clicking near the start point of current subpath
+    if (state.currentPath && currentMoveCmd) {
+      const movePoint = state.geometries.find(
+        (g) => g.id === currentMoveCmd.point
+      );
+      const moveX = state.params[movePoint.x];
+      const moveY = state.params[movePoint.y];
 
-      if (isNearPoint(x, y, startX, startY)) {
-        // Close the path
+      if (isNearPoint(x, y, moveX, moveY)) {
+        // Close the current subpath
         state.currentPath.data.push({
           cmd: "close",
         });
+        // Clear current path and move command when closing
         state.currentPath = null;
+        currentMoveCmd = null;
         state.currentPoint = null;
-        startPointId = null;
         evaluateAllLayers();
         return;
       }
     }
 
-    const pointId = addPoint(x, y);
-
     if (!state.currentPath) {
-      // Start new path
-      const pathId = createRandStr(4);
-      startPointId = pointId;
-      state.currentPath = {
-        id: pathId,
-        type: "path",
-        data: [
-          {
-            cmd: "start",
+      if (state.editingPath) {
+        // If we're editing a path, continue with that path
+        const existingPath = state.geometries.find(
+          (g) => g.id === state.editingPath
+        );
+        if (existingPath) {
+          const moveCmd = {
+            cmd: "move",
             point: pointId,
+          };
+          currentMoveCmd = moveCmd;
+          state.currentPath = existingPath;
+          state.currentPath.data.push(moveCmd);
+        }
+      } else {
+        // Start new path
+        const pathId = createRandStr(4);
+        const moveCmd = {
+          cmd: "move",
+          point: pointId,
+        };
+        currentMoveCmd = moveCmd;
+        state.currentPath = {
+          id: pathId,
+          type: "path",
+          data: [moveCmd],
+          layer: state.activeLayer,
+          attributes: {
+            fill: "none",
+            stroke: "black",
+            strokeWidth: 2,
           },
-        ],
-        layer: state.activeLayer,
-        attributes: {
-          fill: "none",
-          stroke: "black",
-          strokeWidth: 2,
-        },
-      };
-      state.geometries.push(state.currentPath);
+        };
+        state.geometries.push(state.currentPath);
+        // Enter path editing mode for the new path
+        state.editingPath = pathId;
+        state.selectedGeometry = new Set();
+      }
     } else {
-      // Add point to existing path
-      state.currentPath.data.push({
-        cmd: "line",
-        point: pointId,
-      });
+      if (!currentMoveCmd) {
+        // Start a new subpath if there's no current move command
+        const moveCmd = {
+          cmd: "move",
+          point: pointId,
+        };
+        currentMoveCmd = moveCmd;
+        state.currentPath.data.push(moveCmd);
+      } else {
+        // Add point to existing subpath
+        state.currentPath.data.push({
+          cmd: "line",
+          point: pointId,
+        });
+      }
     }
     evaluateAllLayers();
   });
 
+  // Add key handler for starting new subpath
   window.addEventListener("keydown", (e) => {
     if (state.tool !== "DRAW_PATH") return;
 
-    if (e.key === "Enter" && state.currentPath) {
-      // Path is already in geometries, just need to clean up
-      state.currentPath = null;
-      state.currentPoint = null;
-      evaluateAllLayers();
+    if (e.key === "s") {
+      state.tool = "SELECT";
+    } else if (e.key === "d") {
+      state.tool = "DRAW_PATH";
     } else if (e.key === "Escape") {
-      // Remove the current path from geometries
-      if (state.currentPath) {
-        state.geometries = state.geometries.filter(
-          (g) => g.id !== state.currentPath.id
-        );
-      }
+      // Exit path editing mode
+      state.editingPath = null;
+      state.selectedGeometry = new Set();
       state.currentPath = null;
       state.currentPoint = null;
+      currentMoveCmd = null;
+      evaluateAllLayers();
+    } else if (e.key === "Enter") {
+      // Finish current path and start a new one
+      state.currentPath = null;
+      state.currentPoint = null;
+      currentMoveCmd = null;
       evaluateAllLayers();
     }
   });

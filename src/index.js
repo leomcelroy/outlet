@@ -9,6 +9,7 @@ import { addCaching } from "./events/addCaching.js";
 import { addDropUpload } from "./events/addDropUpload.js";
 import { addLayerDrag } from "./events/addLayerDrag.js";
 import { addPluginDrag } from "./events/addPluginDrag.js";
+import { addPathDrag } from "./events/addPathDrag.js";
 import { addPathDrawing } from "./events/addPathDrawing.js";
 
 import { deleteGeometry } from "./utils/deleteGeometry.js";
@@ -29,6 +30,7 @@ import { pluginSearch } from "./modals/pluginSearch.js";
 import { pluginControlModal } from "./modals/pluginControlModal.js";
 
 import { moveLayer } from "./actions/moveLayer.js";
+import { movePath } from "./actions/movePath.js";
 
 import { bitmap } from "./plugins/bitmap.js";
 
@@ -41,6 +43,15 @@ export const STATE = {
     {
       id: "SKETCH_1",
       layer: "layerId",
+      parameters: {
+        parameterId: number,
+      },
+      points: {
+        pointId: {
+          x: parameterId,
+          y: parameterId,
+        },
+      },
       paths: [
         {
           id,
@@ -151,6 +162,8 @@ export const STATE = {
           outputGeometry: [],
           inputGeometry: [],
         });
+        // Set the new layer as active
+        STATE.activeLayer = newId;
         break;
       }
       case "OPEN_PLUGIN_MODAL": {
@@ -245,6 +258,12 @@ export const STATE = {
         moveLayer(args);
         break;
       }
+      case "MOVE_PATH_TO_LAYER": {
+        console.log("MOVE_PATH_TO_LAYER", args);
+        const { pathId, targetLayerId } = args;
+        movePath(args);
+        break;
+      }
       case "MOVE_PLUGIN": {
         const { sourceId, targetId, position } = args;
         const activeLayer = STATE.layers.find(
@@ -300,6 +319,38 @@ export const STATE = {
           layers: STATE.layers,
         });
         sessionStorage.setItem("sketchState", file);
+        break;
+      }
+      case "DELETE_LAYER": {
+        const { layerId } = args;
+        // Don't allow deleting the default layer
+        if (layerId === "DEFAULT_LAYER") return;
+
+        // Find the layer to delete
+        const layerIndex = STATE.layers.findIndex((l) => l.id === layerId);
+        if (layerIndex === -1) return;
+
+        // Remove layer from parent's children if it has a parent
+        const layer = STATE.layers[layerIndex];
+        if (layer.parent) {
+          const parent = STATE.layers.find((l) => l.id === layer.parent);
+          if (parent) {
+            parent.children = parent.children.filter((id) => id !== layerId);
+          }
+        }
+
+        // Delete all geometries in this layer
+        STATE.geometries = STATE.geometries.filter((g) => g.layer !== layerId);
+
+        // Remove the layer
+        STATE.layers.splice(layerIndex, 1);
+
+        // If the deleted layer was active, set active layer to default
+        if (STATE.activeLayer === layerId) {
+          STATE.activeLayer = "DEFAULT_LAYER";
+        }
+
+        evaluateAllLayers();
         break;
       }
       default:
@@ -404,6 +455,7 @@ export function init() {
 
   addLayerDrag(state);
   addPluginDrag(state);
+  addPathDrag(state);
 
   addDropUpload((file) => {
     const newState = JSON.parse(file);
@@ -419,7 +471,7 @@ export function init() {
   window.addEventListener("keydown", (e) => {
     if (e.key === "d") {
       hitEsc();
-      state.tool = "DRAW";
+      state.tool = "DRAW_PATH";
     }
 
     if (e.key === "s") {
@@ -436,11 +488,6 @@ export function init() {
     if (e.key === "Backspace") {
       deleteGeometry(state);
       evaluateAllLayers();
-    }
-
-    if (e.key === "p" && !e.metaKey && !e.ctrlKey) {
-      hitEsc();
-      state.tool = "DRAW_PATH";
     }
   });
 }

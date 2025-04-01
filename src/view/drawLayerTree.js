@@ -1,5 +1,7 @@
 import { html, svg } from "lit-html";
 import { getLayerTree } from "../getLayerTree.js";
+import { deleteGeometry } from "../utils/deleteGeometry.js";
+import { evaluateAllLayers } from "../evaluateAllLayers.js";
 
 export function drawLayerTree(state) {
   return html`
@@ -13,7 +15,7 @@ export function drawLayerTree(state) {
           + New Layer
         </button>
       </div>
-      <div class="flex-1 overflow-auto bg-gray-200 rounded pb-10 p-1">
+      <div class="flex-1 overflow-auto bg-gray-200 rounded pb-10 p-2">
         ${renderLayerTree(getLayerTree(), state)}
       </div>
     </div>
@@ -33,7 +35,7 @@ function renderLayerTree(tree, state) {
         draggable-layer
         draggable
         data-node-id=${node.id}
-        class="border-l-2 border-gray-400 ml-2 my-1"
+        class="border-l-2 border-gray-400 my-1"
       >
         <div class="flex items-center">
           <button
@@ -53,23 +55,46 @@ function renderLayerTree(tree, state) {
               class="flex-grow truncate"
               @click=${() =>
                 state.dispatch({ type: "SET_ACTIVE_LAYER", layerId: node.id })}
-              @dblclick=${(e) => changeLayerName(e, state, node)}
+              @dblclick=${(e) => {
+                if (node.id !== "DEFAULT_LAYER") {
+                  changeLayerName(e, state, node);
+                }
+              }}
             >
               ${node.name}
             </span>
-            <span
-              draggable-layer-trigger
-              class="flex-shrink-0 cursor-move text-gray-500 hover:text-gray-700"
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16">
-                <circle cx="4" cy="4" r="1.5" />
-                <circle cx="12" cy="4" r="1.5" />
-                <circle cx="4" cy="8" r="1.5" />
-                <circle cx="12" cy="8" r="1.5" />
-                <circle cx="4" cy="12" r="1.5" />
-                <circle cx="12" cy="12" r="1.5" />
-              </svg>
-            </span>
+            <div class="flex items-center gap-1">
+              ${node.id !== "DEFAULT_LAYER"
+                ? html`
+                    <button
+                      @click=${(e) => {
+                        e.stopPropagation();
+                        state.dispatch({
+                          type: "DELETE_LAYER",
+                          layerId: node.id,
+                        });
+                      }}
+                      class="text-gray-400 hover:text-red-500 text-sm px-1 cursor-pointer"
+                      title="Delete layer"
+                    >
+                      ×
+                    </button>
+                  `
+                : ""}
+              <span
+                draggable-layer-trigger
+                class="flex-shrink-0 cursor-move text-gray-500 hover:text-gray-700"
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16">
+                  <circle cx="4" cy="4" r="1.5" />
+                  <circle cx="12" cy="4" r="1.5" />
+                  <circle cx="4" cy="8" r="1.5" />
+                  <circle cx="12" cy="8" r="1.5" />
+                  <circle cx="4" cy="12" r="1.5" />
+                  <circle cx="12" cy="12" r="1.5" />
+                </svg>
+              </span>
+            </div>
           </div>
         </div>
 
@@ -79,7 +104,12 @@ function renderLayerTree(tree, state) {
                 ${visibleGeometry.map(
                   (geo) => html`
                     <div
-                      class="hover:bg-blue-100 px-1 cursor-pointer"
+                      class="hover:bg-blue-100 px-1 cursor-pointer flex items-center justify-between ${state.editingPath ===
+                      geo.id
+                        ? "bg-blue-100"
+                        : ""}"
+                      draggable-path
+                      data-path-id=${geo.id}
                       @click=${() => {
                         if (geo.type === "path") {
                           state.editingPath = geo.id;
@@ -90,7 +120,34 @@ function renderLayerTree(tree, state) {
                         }
                       }}
                     >
-                      ${geo.type} ${geo.id}
+                      <span>${geo.type} ${geo.id}</span>
+                      <div class="flex items-center gap-1">
+                        <button
+                          @click=${(e) => {
+                            e.stopPropagation();
+                            state.selectedGeometry = new Set([geo.id]);
+                            deleteGeometry(state);
+                            evaluateAllLayers();
+                          }}
+                          class="text-gray-400 hover:text-red-500 text-sm px-1 cursor-pointer"
+                          title="Delete path"
+                        >
+                          ×
+                        </button>
+                        <span
+                          draggable-path-trigger
+                          class="flex-shrink-0 cursor-move text-gray-500 hover:text-gray-700"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 16 16">
+                            <circle cx="4" cy="4" r="1.5" />
+                            <circle cx="12" cy="4" r="1.5" />
+                            <circle cx="4" cy="8" r="1.5" />
+                            <circle cx="12" cy="8" r="1.5" />
+                            <circle cx="4" cy="12" r="1.5" />
+                            <circle cx="12" cy="12" r="1.5" />
+                          </svg>
+                        </span>
+                      </div>
                     </div>
                   `
                 )}

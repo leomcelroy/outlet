@@ -11,7 +11,6 @@ export function addLineSelection(el, state) {
       patchState((state) => {
         state.editingPath = id;
         state.selectedGeometry = new Set();
-        state.tool = "SELECT";
       });
     } else if (state.tool === "SELECT") {
       const id = e.target.dataset.id;

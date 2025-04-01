@@ -1,4 +1,5 @@
 import { html, svg } from "lit-html";
+import { getPathPoints } from "../utils/getPathPoints.js";
 
 const PT_SIZE = 5;
 
@@ -61,13 +62,21 @@ function drawLines(state, lines, layer) {
 function drawPaths(state, paths, layer) {
   return paths.map((path) => {
     let pathData = "";
-    path.data.forEach((cmd, i) => {
-      if (cmd.cmd === "start") {
-        pathData += `M ${cmd.x} ${cmd.y} `;
-      } else if (cmd.cmd === "line") {
-        pathData += `L ${cmd.x} ${cmd.y} `;
-      } else if (cmd.cmd === "curve") {
-        pathData += `C ${cmd.x1} ${cmd.y1} ${cmd.x2} ${cmd.y2} ${cmd.x} ${cmd.y} `;
+    path.data.forEach((cmd) => {
+      if (cmd.cmd === "move" || cmd.cmd === "line") {
+        const point = state.geometries.find((g) => g.id === cmd.point);
+        const x = state.params[point.x];
+        const y = state.params[point.y];
+        pathData += `${cmd.cmd === "move" ? "M" : "L"} ${x} ${y} `;
+      } else if (cmd.cmd === "cubic") {
+        const point = state.geometries.find((g) => g.id === cmd.point);
+        const c1 = state.geometries.find((g) => g.id === cmd.control1);
+        const c2 = state.geometries.find((g) => g.id === cmd.control2);
+        pathData += `C ${state.params[c1.x]} ${state.params[c1.y]} ${
+          state.params[c2.x]
+        } ${state.params[c2.y]} ${state.params[point.x]} ${
+          state.params[point.y]
+        } `;
       } else if (cmd.cmd === "close") {
         pathData += "Z ";
       }
@@ -80,6 +89,7 @@ function drawPaths(state, paths, layer) {
         ?data-selected=${state.selectedGeometry.has(path.id)}
         class="hover:stroke-orange-500 data-[selected]:stroke-red-500"
         d=${pathData}
+        fill-rule=${path.attributes?.fillRule || "evenodd"}
         fill=${path.attributes?.fill || layer.attributes.fill || "none"}
         stroke=${path.attributes?.stroke || layer.attributes.stroke || "black"}
         stroke-width=${
@@ -97,18 +107,9 @@ function drawLayer(state, layer) {
   const flatGeometry = layer.outputGeometry;
 
   const editingPath = state.geometries.find((g) => g.id === state.editingPath);
-  const editingPathPoints = new Set();
-  editingPath?.data.forEach((cmd) => {
-    if (cmd.point) {
-      editingPathPoints.add(cmd.point);
-    }
-    if (cmd.control1) {
-      editingPathPoints.add(cmd.control1);
-    }
-    if (cmd.control2) {
-      editingPathPoints.add(cmd.control2);
-    }
-  });
+  const editingPathPoints = editingPath
+    ? getPathPoints(editingPath)
+    : new Set();
 
   const allPoints = state.geometries.filter((x) => x.type === "point");
 

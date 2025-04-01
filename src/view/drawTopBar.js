@@ -22,7 +22,16 @@ export function drawTopBar(state) {
         Download
       </div>
 
-      <div class="relative ml-4 group">
+      <div
+        @click=${(e) => {
+          state.dispatch({ type: "CLEAR" });
+        }}
+        class="hover:bg-gray-200 w-fit p-2 cursor-pointer"
+      >
+        Clear
+      </div>
+
+      <div class="relative group">
         <div class="flex items-center hover:bg-gray-200 p-2 rounded">
           Grid Options
         </div>
