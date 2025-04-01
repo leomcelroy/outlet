@@ -31,10 +31,9 @@ export const testDup = {
         ...path,
         data: path.data.map((cmd) => ({
           ...cmd,
-          x: cmd.x + offset,
-          y: cmd.y + offset,
+          ...(cmd.x !== undefined ? { x: cmd.x + offset } : {}),
+          ...(cmd.y !== undefined ? { y: cmd.y + offset } : {}),
         })),
-        id: path.id, // New ID for duplicate
       })),
     ];
   },

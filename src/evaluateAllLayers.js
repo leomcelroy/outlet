@@ -101,14 +101,14 @@ function paramSub(geometries) {
 
               if (cmd.control1) {
                 const c1 = geoMap[cmd.control1];
-                base.x1 = STATE.params[c1.x];
-                base.y1 = STATE.params[c1.y];
+                base.c1x = STATE.params[c1.x];
+                base.c1y = STATE.params[c1.y];
               }
 
               if (cmd.control2) {
                 const c2 = geoMap[cmd.control2];
-                base.x2 = STATE.params[c2.x];
-                base.y2 = STATE.params[c2.y];
+                base.c2x = STATE.params[c2.x];
+                base.c2y = STATE.params[c2.y];
               }
 
               return base;

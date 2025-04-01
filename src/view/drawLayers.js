@@ -64,19 +64,11 @@ function drawPaths(state, paths, layer) {
     let pathData = "";
     path.data.forEach((cmd) => {
       if (cmd.cmd === "move" || cmd.cmd === "line") {
-        const point = state.geometries.find((g) => g.id === cmd.point);
-        const x = state.params[point.x];
-        const y = state.params[point.y];
+        const x = cmd.x;
+        const y = cmd.y;
         pathData += `${cmd.cmd === "move" ? "M" : "L"} ${x} ${y} `;
       } else if (cmd.cmd === "cubic") {
-        const point = state.geometries.find((g) => g.id === cmd.point);
-        const c1 = state.geometries.find((g) => g.id === cmd.control1);
-        const c2 = state.geometries.find((g) => g.id === cmd.control2);
-        pathData += `C ${state.params[c1.x]} ${state.params[c1.y]} ${
-          state.params[c2.x]
-        } ${state.params[c2.y]} ${state.params[point.x]} ${
-          state.params[point.y]
-        } `;
+        pathData += `C ${cmd.c1x} ${cmd.c1y} ${cmd.c2x} ${cmd.c2y} ${cmd.x} ${cmd.y} `;
       } else if (cmd.cmd === "close") {
         pathData += "Z ";
       }
