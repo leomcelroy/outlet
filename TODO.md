@@ -1,6 +1,12 @@
 TODO
 
-- delete layers
+- snap to content
+- download file
+- upload file
+- rasterize
+- more plugins
+- bake layer
+
 - bezier drawing
 - add measure sides
 - toggle layer visibility
@@ -10,6 +16,7 @@ TODO
 
 DONE
 
+- delete layers
 - reorder layers
 - add plugin search
 - add plugins
