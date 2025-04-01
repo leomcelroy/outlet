@@ -1,5 +1,6 @@
 import { deleteGeometry } from "../utils/deleteGeometry.js";
 import { evaluateAllLayers } from "../evaluateAllLayers.js";
+import { filterSingleCommandPaths } from "../utils/filterSingleCommandPaths.js";
 
 // import { hitEsc } from "../utils/hitEsc.js";
 
@@ -8,11 +9,11 @@ export function addHotKeys(state) {
     if (e.key === "d") {
       state.currentPath = null;
       state.selectedGeometry = new Set();
-      state.tool = "DRAW_PATH";
+      state.dispatch({ type: "SET_TOOL", tool: "DRAW_PATH" });
     }
 
     if (e.key === "s") {
-      state.tool = "SELECT";
+      state.dispatch({ type: "SET_TOOL", tool: "SELECT" });
     }
 
     if (e.key === "Escape") {
@@ -20,7 +21,8 @@ export function addHotKeys(state) {
       state.currentPath = null;
       state.selectedGeometry = new Set();
       state.currentPoint = null;
-      // currentMoveCmd = null;
+      // Filter out paths with only one command
+      filterSingleCommandPaths(state);
     }
 
     if (e.key === "Enter") {

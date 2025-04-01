@@ -308,6 +308,12 @@ export const STATE = {
         evaluateAllLayers();
         break;
       }
+      case "SET_TOOL": {
+        const { tool } = args;
+        STATE.tool = tool;
+        filterSingleCommandPaths(state);
+        break;
+      }
       default:
         console.log("Unknown event:", type);
         break;

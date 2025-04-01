@@ -114,7 +114,7 @@ function renderLayerTree(tree, state) {
                         if (geo.type === "path") {
                           state.editingPath = geo.id;
                           state.selectedGeometry = new Set();
-                          state.tool = "SELECT";
+                          state.dispatch({ type: "SET_TOOL", tool: "SELECT" });
                         } else {
                           state.selectedGeometry.add(geo.id);
                         }
