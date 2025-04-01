@@ -44,7 +44,7 @@ export function addPathDrawing(el, state) {
     return pId;
   }
 
-  function isNearPoint(x1, y1, x2, y2, threshold = 10) {
+  function isNearPoint(x1, y1, x2, y2, threshold = 1e-6) {
     const dx = x1 - x2;
     const dy = y1 - y2;
     return Math.sqrt(dx * dx + dy * dy) < threshold;
