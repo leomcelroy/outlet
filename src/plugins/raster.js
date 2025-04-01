@@ -42,9 +42,6 @@ export const raster = {
 
     for (const path of children.flat()) {
       const polylines = convertPathToPolylines(path.data);
-      const mask = new PolygonMask(polylines);
-
-      console.log(mask);
 
       for (const pl of polylines) {
         if (isPolygonClosed(pl)) {
