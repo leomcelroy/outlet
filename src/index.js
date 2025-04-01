@@ -187,7 +187,14 @@ export const STATE = {
               container.innerHTML = "";
             };
 
-            pluginType.customModal({ container, updateControl, close });
+            console.log(plugin.controls);
+
+            pluginType.customModal({
+              container,
+              updateControl,
+              close,
+              controls: plugin.controls,
+            });
           } else {
             pluginControlModal();
           }
