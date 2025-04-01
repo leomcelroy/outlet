@@ -213,6 +213,16 @@ export const STATE = {
         evaluateAllLayers();
         break;
       }
+      case "TOGGLE_PLUGIN": {
+        const { pluginId, layerId } = args;
+        const layer = STATE.layers.find((layer) => layer.id === layerId);
+        const plugin = layer.plugins.find((plugin) => plugin.id === pluginId);
+        if (plugin) {
+          plugin.enabled = !plugin.enabled;
+          evaluateAllLayers();
+        }
+        break;
+      }
       case "CLEAR": {
         STATE.editingPath = null;
         STATE.selectedGeometry = new Set();
@@ -402,9 +412,7 @@ export function init() {
     }
 
     if (e.key === "Escape") {
-      if (state.editingPath) {
-        state.editingPath = null;
-      }
+      state.currentPath = null;
       state.selectedGeometry = new Set();
     }
 

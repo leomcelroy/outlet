@@ -1,4 +1,4 @@
-export function convertPathToPolyline(pathData) {
+export function convertPathToPolylines(pathData) {
   if (!pathData || !Array.isArray(pathData) || pathData.length === 0) {
     return [];
   }
@@ -40,5 +40,5 @@ export function convertPathToPolyline(pathData) {
   }
 
   // If there's only one polyline, return it directly for backwards compatibility
-  return polylines.length === 1 ? polylines[0] : polylines;
+  return polylines;
 }

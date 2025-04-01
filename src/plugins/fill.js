@@ -11,6 +11,7 @@ export const fill = {
       id: createRandStr(),
       name,
       type: "fill",
+      enabled: true,
       controls: [
         {
           id: "color",

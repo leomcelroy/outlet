@@ -38,6 +38,7 @@ export const demoModal = {
       id: createRandStr(),
       name,
       type,
+      enabled: true,
       controls: [
         {
           id: "color",

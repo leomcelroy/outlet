@@ -378,6 +378,7 @@ export const bitmap = {
       id: createRandStr(),
       name,
       type,
+      enabled: true,
       controls: [
         {
           id: "color",

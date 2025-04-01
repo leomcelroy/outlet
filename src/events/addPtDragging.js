@@ -43,6 +43,7 @@ export function addPtDragging(el, state) {
     dragging = e.detail === 1;
     if (dragging) {
       el.panZoomMethods.cancelPanZoom(true);
+      state.isDragging = true;
     }
     mousedownPoint = getPoint(e);
     ogParams = JSON.parse(JSON.stringify(state.params));
@@ -121,6 +122,7 @@ export function addPtDragging(el, state) {
     }
 
     dragging = false;
+    state.isDragging = false;
     el.panZoomMethods.cancelPanZoom(false);
   });
 }

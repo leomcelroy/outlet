@@ -11,6 +11,7 @@ export const stroke = {
       id: createRandStr(),
       name,
       type,
+      enabled: true,
       controls: [
         {
           id: "color",

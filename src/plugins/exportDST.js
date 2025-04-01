@@ -1,5 +1,5 @@
 import { createRandStr } from "../utils/createRandStr.js";
-import { convertPathToPolyline } from "../utils/convertPathToPolyline.js";
+import { convertPathToPolylines } from "../utils/convertPathToPolylines.js";
 import { tajimaDSTExport } from "../drafts/tajimaDSTExport.js";
 
 import { downloadBuffer } from "../utils/downloadBuffer.js";
@@ -40,8 +40,11 @@ export const exportDST = {
       ],
     };
   },
-  process(controls, children) {
-    const pls = children.flat().map((path) => convertPathToPolyline(path.data));
+  process(controls, outputGeometry) {
+    const pls = outputGeometry
+      .map((path) => convertPathToPolylines(path.data))
+      .flat();
+
     const bbox = bounds(pls);
     const targetWidth = controls.maxDimension;
     const targetHeight = controls.maxDimension;
@@ -61,8 +64,5 @@ export const exportDST = {
     });
 
     downloadBuffer(`${controls.designName}.dst`, dstBuffer);
-
-    // Just pass through paths unchanged
-    return children.flat();
   },
 };

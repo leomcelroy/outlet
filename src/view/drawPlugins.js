@@ -28,6 +28,20 @@ export function drawPlugins(state) {
           </span>
           <div class="flex items-center gap-1">
             <button
+              @click=${() => {
+                state.dispatch({
+                  type: "TOGGLE_PLUGIN",
+                  pluginId: plugin.id,
+                  layerId: activeLayer.id,
+                });
+              }}
+              class="px-2 text-xs ${plugin.enabled
+                ? "text-green-600 hover:text-green-800"
+                : "text-gray-400 hover:text-gray-600"} cursor-pointer"
+            >
+              ${plugin.enabled ? "On" : "Off"}
+            </button>
+            <button
               @click=${() =>
                 state.dispatch({
                   type: "OPEN_PLUGIN_MODAL",

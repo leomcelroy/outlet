@@ -6,6 +6,7 @@ TODO
 - rasterize
 - more plugins
 - bake layer
+- make d not start a new path if in editting mode
 
 - bezier drawing
 - add measure sides

@@ -11,6 +11,7 @@ export const testDup = {
       id: createRandStr(),
       name,
       type,
+      enabled: true,
       controls: [
         {
           id: "offset",

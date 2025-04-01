@@ -79,7 +79,11 @@ function drawPaths(state, paths, layer) {
         path
         data-id=${path.id}
         ?data-selected=${state.selectedGeometry.has(path.id)}
-        class="hover:stroke-orange-500 data-[selected]:stroke-red-500"
+        class=${
+          state.isDragging
+            ? "data-[selected]:stroke-red-500"
+            : "hover:stroke-orange-500 data-[selected]:stroke-red-500"
+        }
         d=${pathData}
         fill-rule=${path.attributes?.fillRule || "evenodd"}
         fill=${path.attributes?.fill || "none"}

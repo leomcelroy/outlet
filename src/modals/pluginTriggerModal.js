@@ -187,13 +187,9 @@ export function pluginTriggerModal(plugin, layer) {
             </button>
             <button
               @click=${() => {
-                const activeLayer =
-                  layer || STATE.layers.find((l) => l.id === STATE.activeLayer);
+                process(controlValues, layer.outputGeometry);
 
-                // Execute the plugin with the collected control values
-                process(controlValues, layer.inputGeometry);
-
-                evaluateAllLayers();
+                // evaluateAllLayers();
                 remove();
               }}
               class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md text-sm font-medium transition-colors"

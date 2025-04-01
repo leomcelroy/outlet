@@ -35,6 +35,7 @@ function evaluateLayer(layer) {
 
   // Apply plugins only to paths
   layer.outputGeometry = layer.plugins
+    .filter((plugin) => plugin.enabled)
     .reduce((currentGeo, plugin) => {
       const pluginDef = STATE.plugins.find((p) => p.type === plugin.type);
       if (!pluginDef || typeof pluginDef.process !== "function") {
