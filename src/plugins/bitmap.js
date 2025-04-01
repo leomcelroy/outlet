@@ -159,7 +159,7 @@ export const bitmap = {
         stroke: "deeppink",
       },
       data: [
-        { cmd: "start", x: outline[0].x, y: outline[0].y },
+        { cmd: "move", x: outline[0].x, y: outline[0].y },
         ...outline.slice(1).map(({ x, y }) => ({ cmd: "line", x, y })),
         { cmd: "close" },
       ],

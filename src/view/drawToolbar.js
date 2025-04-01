@@ -37,7 +37,7 @@ function drawNormalToolbar(state) {
     <button
       ?data-active=${state.tool === "SELECT"}
       @click=${(e) => {
-        state.dispatch({ type: "SET_TOOL", tool: "SELECT" });
+        state.tool = "SELECT";
       }}
       class="data-[active]:bg-indigo-500 data-[active]:text-white hover:bg-indigo-400 bg-gray-400 text-black py-1 px-2 rounded shadow-md text-sm"
     >
