@@ -32,12 +32,15 @@ export const rasterPath = {
     for (const path of children.flat()) {
       const polylines = convertPathToPolylines(path.data);
 
-      console.log(polylines);
-
-      const prevPoint = polylines[0][0];
-
       for (const polyline of polylines) {
-        const segmentPts = [];
+        const pathData = [];
+        let prevPoint = polyline[0];
+        // move to start point of the segment
+        pathData.push({
+          x: prevPoint[0],
+          y: prevPoint[1],
+          cmd: "move",
+        });
 
         for (let i = 1; i < polyline.length; i += 1) {
           const currentPoint = polyline[i];
@@ -54,26 +57,25 @@ export const rasterPath = {
           // let actualSegmentLength =
           //   extra > 0 ? segmentLength + extra / segmentLength : segmentLength;
 
-          const dx = (currentPoint[0] - prevPoint[0]) / numSegments;
-          const dy = (currentPoint[1] - prevPoint[1]) / numSegments;
+          const segDx = currentPoint[0] - prevPoint[0];
+          const segDy = currentPoint[1] - prevPoint[1];
 
-          segmentPts.push(prevPoint);
-          // Create segments
-          for (let j = 0; j < numSegments; j = j + 2) {
-            const [lastX, lastY] = segmentPts.at(-1);
-            segmentPts.push([lastX + dx, lastY + dy]);
+          const stitchDx = segDx / numSegments;
+          const stitchDy = segDy / numSegments;
+
+          // Create intermediate segments
+          for (let j = 0; j < numSegments; j = j + 1) {
+            const { x: lastX, y: lastY } = pathData.at(-1);
+
+            pathData.push({
+              x: lastX + stitchDx,
+              y: lastY + stitchDy,
+              cmd: "line",
+            });
           }
+
+          prevPoint = currentPoint;
         }
-
-        console.log(segmentPts);
-
-        const pathData = segmentPts.map(([x, y], i) => {
-          return {
-            x,
-            y,
-            cmd: i === 0 ? "move" : "line",
-          };
-        });
 
         // If we already have data for this ID, append to it
         if (pathsByID.has(path.id)) {
@@ -92,6 +94,9 @@ export const rasterPath = {
       type: "path",
       id,
       data,
+      attributes: {
+        strokeDashLength: segmentLength,
+      },
     }));
   },
 };

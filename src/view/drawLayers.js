@@ -89,6 +89,16 @@ function drawPaths(state, paths, layer) {
         fill=${path.attributes?.fill || "none"}
         stroke=${path.attributes?.stroke || "black"}
         stroke-width=${path.attributes?.strokeWidth || PT_SIZE * 0.6}
+        stroke-linecap=${path.attributes?.strokeLinecap || "butt"}
+        stroke-dasharray=${
+          path.attributes?.strokeDashLength
+            ? `${
+                path.attributes?.strokeDashLength * state.panZoomMethods.scale()
+              } ${
+                path.attributes?.strokeDashLength * state.panZoomMethods.scale()
+              }`
+            : "none"
+        }
         vector-effect="non-scaling-stroke"
       />
     `;
