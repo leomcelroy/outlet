@@ -1,9 +1,9 @@
 import { createRandStr } from "../utils/createRandStr.js";
 
-const type = "scale";
-const name = "Scale";
+const type = "translate";
+const name = "Translate";
 
-export const scale = {
+export const translate = {
   type,
   name,
   init(options = {}) {
@@ -14,18 +14,27 @@ export const scale = {
       enabled: true,
       controls: [
         {
-          id: "scale",
+          id: "x",
           type: "number",
-          value: options.scale || 1,
-          min: 0.1,
-          max: 10,
-          step: 0.1,
+          value: options.x || 0,
+          min: -1000,
+          max: 1000,
+          step: 1,
+        },
+        {
+          id: "y",
+          type: "number",
+          value: options.y || 0,
+          min: -1000,
+          max: 1000,
+          step: 1,
         },
         {
           id: "originX",
           type: "select",
-          value: options.originX || "center",
+          value: options.originX || "zero",
           options: [
+            { value: "zero", label: "Zero" },
             { value: "left", label: "Left" },
             { value: "center", label: "Center" },
             { value: "right", label: "Right" },
@@ -34,8 +43,9 @@ export const scale = {
         {
           id: "originY",
           type: "select",
-          value: options.originY || "center",
+          value: options.originY || "zero",
           options: [
+            { value: "zero", label: "Zero" },
             { value: "top", label: "Top" },
             { value: "center", label: "Center" },
             { value: "bottom", label: "Bottom" },
@@ -45,7 +55,7 @@ export const scale = {
     };
   },
   process(controls, children) {
-    const { scale, originX, originY } = controls;
+    const { x, y, originX, originY } = controls;
 
     // Calculate bounds of all paths
     let minX = Infinity,
@@ -71,6 +81,9 @@ export const scale = {
     let originYValue = 0;
 
     switch (originX) {
+      case "zero":
+        originXValue = 0;
+        break;
       case "left":
         originXValue = minX;
         break;
@@ -83,6 +96,9 @@ export const scale = {
     }
 
     switch (originY) {
+      case "zero":
+        originYValue = 0;
+        break;
       case "top":
         originYValue = minY;
         break;
@@ -94,17 +110,13 @@ export const scale = {
         break;
     }
 
-    // Process paths and scale their data values
+    // Process paths and translate their data values
     return children.flat().map((path) => ({
       ...path,
       data: path.data.map((cmd) => ({
         ...cmd,
-        ...(cmd.x !== undefined
-          ? { x: originXValue + (cmd.x - originXValue) * scale }
-          : {}),
-        ...(cmd.y !== undefined
-          ? { y: originYValue + (cmd.y - originYValue) * scale }
-          : {}),
+        ...(cmd.x !== undefined ? { x: cmd.x - originXValue + x } : {}),
+        ...(cmd.y !== undefined ? { y: cmd.y - originYValue + y } : {}),
       })),
     }));
   },

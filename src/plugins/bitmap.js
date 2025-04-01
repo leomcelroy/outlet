@@ -422,6 +422,7 @@ export const bitmap = {
         attributes: {},
         data: pathData,
       },
+      ...children.flat(),
     ];
   },
 };

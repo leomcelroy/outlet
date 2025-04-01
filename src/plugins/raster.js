@@ -1,5 +1,6 @@
 import { createRandStr } from "../utils/createRandStr.js";
 import { convertPathToPolylines } from "../utils/convertPathToPolylines.js";
+import { PolygonMask } from "../utils/PolygonMask.js";
 
 const type = "raster";
 const name = "Raster";
@@ -41,6 +42,9 @@ export const raster = {
 
     for (const path of children.flat()) {
       const polylines = convertPathToPolylines(path.data);
+      const mask = new PolygonMask(polylines);
+
+      console.log(mask);
 
       for (const pl of polylines) {
         if (isPolygonClosed(pl)) {

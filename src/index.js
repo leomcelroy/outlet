@@ -26,6 +26,9 @@ import { bitmap } from "./plugins/bitmap.js";
 import { raster } from "./plugins/raster.js";
 import { scale } from "./plugins/scale.js";
 import { rasterPath } from "./plugins/rasterPath.js";
+import { rotate } from "./plugins/rotate.js";
+import { translate } from "./plugins/translate.js";
+
 export const STATE = {
   tool: "SELECT",
   params: {},
@@ -54,6 +57,8 @@ export const STATE = {
   plugins: [
     fill,
     stroke,
+    translate,
+    rotate,
     scale,
     testDup,
     // demoModal,

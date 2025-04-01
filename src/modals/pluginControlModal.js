@@ -157,10 +157,10 @@ export function pluginControlModal() {
                       ${control.options.map(
                         (option) => html`
                           <option
-                            value=${option}
-                            ?selected=${control.value === option}
+                            value=${option.value}
+                            ?selected=${control.value === option.value}
                           >
-                            ${option}
+                            ${option.label}
                           </option>
                         `
                       )}

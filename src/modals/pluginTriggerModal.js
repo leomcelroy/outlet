@@ -142,10 +142,11 @@ export function pluginTriggerModal(plugin, layer) {
                         ${control.options.map(
                           (option) => html`
                             <option
-                              value=${option}
-                              ?selected=${controlValues[control.id] === option}
+                              value=${option.value}
+                              ?selected=${controlValues[control.id] ===
+                              option.value}
                             >
-                              ${option}
+                              ${option.label}
                             </option>
                           `
                         )}
@@ -188,8 +189,6 @@ export function pluginTriggerModal(plugin, layer) {
             <button
               @click=${() => {
                 process(controlValues, layer.outputGeometry);
-
-                // evaluateAllLayers();
                 remove();
               }}
               class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md text-sm font-medium transition-colors"
