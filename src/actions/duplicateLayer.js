@@ -2,15 +2,28 @@ import { STATE } from "../index.js";
 import { createRandStr } from "../utils/createRandStr.js";
 import { evaluateAllLayers } from "../evaluateAllLayers.js";
 
+function generateUniqueLayerName(baseName) {
+  let name = `${baseName} (Copy)`;
+  let counter = 1;
+
+  // Keep trying until we find a unique name
+  while (STATE.layers.some((layer) => layer.name === name)) {
+    name = `${baseName} (Copy ${counter})`;
+    counter++;
+  }
+
+  return name;
+}
+
 export function duplicateLayer() {
   const activeLayer = STATE.layers.find((l) => l.id === STATE.activeLayer);
   if (!activeLayer) return;
 
   // Create new layer with unique ID
-  const newId = `LAYER_${STATE.layers.length + 1}`;
+  const newId = `LAYER_${createRandStr(4)}`;
   const newLayer = {
     id: newId,
-    name: `${activeLayer.name} (Copy)`,
+    name: generateUniqueLayerName(activeLayer.name),
     parent: activeLayer.parent,
     children: [...activeLayer.children],
     plugins: activeLayer.plugins.map((plugin) => ({
