@@ -46,62 +46,79 @@ export const rasterPath = {
       const polylines = convertPathToPolylines(path.data);
 
       for (const polyline of polylines) {
+        // Skip empty polylines
+        if (!polyline || polyline.length === 0) continue;
+
         const pathData = [];
         const perpendicularPoints = [];
 
-        // First pass: create perpendicular lines along the path
-        for (let i = 0; i < polyline.length - 1; i++) {
-          const currentPoint = polyline[i];
-          const nextPoint = polyline[i + 1];
+        // Handle single point case
+        if (polyline.length === 1) {
+          const point = polyline[0];
+          // For a single point, create a small horizontal line
+          perpendicularPoints.push({
+            x: point[0] - thickness,
+            y: point[1],
+          });
+          perpendicularPoints.push({
+            x: point[0] + thickness,
+            y: point[1],
+          });
+        } else {
+          // First pass: create perpendicular lines along the path
+          for (let i = 0; i < polyline.length - 1; i++) {
+            const currentPoint = polyline[i];
+            const nextPoint = polyline[i + 1];
 
-          const segDx = nextPoint[0] - currentPoint[0];
-          const segDy = nextPoint[1] - currentPoint[1];
-          const length = Math.sqrt(segDx * segDx + segDy * segDy);
+            const segDx = nextPoint[0] - currentPoint[0];
+            const segDy = nextPoint[1] - currentPoint[1];
+            const length = Math.sqrt(segDx * segDx + segDy * segDy);
 
-          // Calculate perpendicular vector
-          const perpX = -segDy / length;
-          const perpY = segDx / length;
+            // Calculate perpendicular vector
+            const perpX = -segDy / length;
+            const perpY = segDx / length;
 
-          // Calculate number of segments based on length and spacing
-          const numSegments = Math.max(1, Math.floor(length / spacing));
+            // Calculate number of segments based on length and spacing
+            const numSegments = Math.max(1, Math.floor(length / spacing));
 
-          // Add points for perpendicular line
-          for (let j = 0; j <= numSegments; j++) {
-            const t = j / numSegments;
-            const x = currentPoint[0] + segDx * t;
-            const y = currentPoint[1] + segDy * t;
+            // Add points for perpendicular line
+            for (let j = 0; j <= numSegments; j++) {
+              const t = j / numSegments;
+              const x = currentPoint[0] + segDx * t;
+              const y = currentPoint[1] + segDy * t;
 
-            perpendicularPoints.push({
-              x: x + perpX * thickness,
-              y: y + perpY * thickness,
-            });
-            perpendicularPoints.push({
-              x: x - perpX * thickness,
-              y: y - perpY * thickness,
-            });
+              perpendicularPoints.push({
+                x: x + perpX * thickness,
+                y: y + perpY * thickness,
+              });
+              perpendicularPoints.push({
+                x: x - perpX * thickness,
+                y: y - perpY * thickness,
+              });
+            }
           }
+
+          // Handle the last point
+          const lastPoint = polyline[polyline.length - 1];
+          const lastPrevPoint = polyline[polyline.length - 2];
+          const lastSegDx = lastPoint[0] - lastPrevPoint[0];
+          const lastSegDy = lastPoint[1] - lastPrevPoint[1];
+          const lastLength = Math.sqrt(
+            lastSegDx * lastSegDx + lastSegDy * lastSegDy
+          );
+          const lastPerpX = -lastSegDy / lastLength;
+          const lastPerpY = lastSegDx / lastLength;
+          perpendicularPoints.push({
+            x: lastPoint[0] + lastPerpX * thickness,
+            y: lastPoint[1] + lastPerpY * thickness,
+          });
+          perpendicularPoints.push({
+            x: lastPoint[0] - lastPerpX * thickness,
+            y: lastPoint[1] - lastPerpY * thickness,
+          });
         }
 
-        // Handle the last point
-        const lastPoint = polyline[polyline.length - 1];
-        const lastPrevPoint = polyline[polyline.length - 2];
-        const lastSegDx = lastPoint[0] - lastPrevPoint[0];
-        const lastSegDy = lastPoint[1] - lastPrevPoint[1];
-        const lastLength = Math.sqrt(
-          lastSegDx * lastSegDx + lastSegDy * lastSegDy
-        );
-        const lastPerpX = -lastSegDy / lastLength;
-        const lastPerpY = lastSegDx / lastLength;
-        perpendicularPoints.push({
-          x: lastPoint[0] + lastPerpX * thickness,
-          y: lastPoint[1] + lastPerpY * thickness,
-        });
-        perpendicularPoints.push({
-          x: lastPoint[0] - lastPerpX * thickness,
-          y: lastPoint[1] - lastPerpY * thickness,
-        });
-
-        // Second pass: create the zigzag path by connecting alternating points
+        // Second pass: create the zigzag path by connecting points
         if (perpendicularPoints.length > 0) {
           // Start with the first point
           pathData.push({
