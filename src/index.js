@@ -25,7 +25,7 @@ import { demoModal } from "./plugins/customModalDemo.js";
 import { bitmap } from "./plugins/bitmap.js";
 import { raster } from "./plugins/raster.js";
 import { scale } from "./plugins/scale.js";
-
+import { rasterPath } from "./plugins/rasterPath.js";
 export const STATE = {
   tool: "SELECT",
   params: {},
@@ -60,6 +60,7 @@ export const STATE = {
     bitmap,
     raster,
     exportDST,
+    rasterPath,
   ],
   currentPath: null,
   editingPath: null,
