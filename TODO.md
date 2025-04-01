@@ -1,12 +1,11 @@
 TODO
 
-- snap to content
-- download file
-- upload file
 - rasterize
+  - holes
 - more plugins
 - bake layer
-- make d not start a new path if in editting mode
+- flip y axis
+- undo/redo
 
 - bezier drawing
 - add measure sides
@@ -27,6 +26,10 @@ DONE
 - add grid
 - add snap to grid
 - reorder plugins
+- make d not start a new path if in editting mode
+- snap view window to content
+- download file
+- upload file
 
 INFO
 

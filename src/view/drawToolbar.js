@@ -1,4 +1,6 @@
 import { html } from "lit-html";
+import { bounds } from "../utils/bounds.js";
+import { convertPathToPolylines } from "../utils/convertPathToPolylines.js";
 
 function drawEditingToolbar(state) {
   return html`

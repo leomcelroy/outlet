@@ -20,11 +20,21 @@ export const raster = {
           label: "Density",
           value: 1,
         },
+        {
+          id: "angle",
+          type: "number",
+          label: "Angle (degrees)",
+          value: 0,
+        },
       ],
     };
   },
   process(controls, children) {
-    const { density } = controls;
+    const { density, angle } = controls;
+
+    if (density < 1) {
+      return children.flat();
+    }
 
     // Create a map to store paths by ID
     const pathsByID = new Map();
@@ -34,16 +44,28 @@ export const raster = {
 
       for (const pl of polylines) {
         if (isPolygonClosed(pl)) {
-          const rasterized = rasterizePolygonZigZag(pl, density);
-          const pathSegments = createPathSegments(rasterized, density);
+          // Calculate center point for rotation
+          const center = calculateCenter(pl);
 
-          // Convert each segment to path data
+          // Rotate the polygon by -angle (to align with horizontal scan lines)
+          const rotatedPolygon = pl.map((point) =>
+            rotatePoint(point, center, -angle)
+          );
+
+          const rasterized = rasterizePolygonZigZag(rotatedPolygon, density);
+          const pathSegments = createPathSegments(rasterized, density * 2);
+
+          // Convert each segment to path data and rotate back
           for (const segment of pathSegments) {
-            const pathData = segment.map(([x, y], i) => ({
-              x,
-              y,
-              cmd: i === 0 ? "move" : "line",
-            }));
+            const pathData = segment.map(([x, y], i) => {
+              // Rotate the point back by the original angle
+              const [rotatedX, rotatedY] = rotatePoint([x, y], center, angle);
+              return {
+                x: rotatedX,
+                y: rotatedY,
+                cmd: i === 0 ? "move" : "line",
+              };
+            });
 
             // If we already have data for this ID, append to it
             if (pathsByID.has(path.id)) {
@@ -171,6 +193,7 @@ function createPathSegments(rasterized, maxConnectionDistance = 10) {
   // Create path segments by connecting lines upward
   const pathSegments = [];
   const processedLines = new Set();
+  let startFromLeft = true; // Track whether to start from left or right
 
   while (processedLines.size < sortedLines.length) {
     // Find the lowest unprocessed line
@@ -181,6 +204,12 @@ function createPathSegments(rasterized, maxConnectionDistance = 10) {
 
     // Start a new path segment
     let currentLine = sortedLines[currentLineIndex];
+
+    // If we're starting from the right, reverse the initial line
+    if (!startFromLeft) {
+      currentLine = [...currentLine].reverse();
+    }
+
     const currentSegment = [...currentLine];
     processedLines.add(currentLineIndex);
 
@@ -190,59 +219,24 @@ function createPathSegments(rasterized, maxConnectionDistance = 10) {
       let nextLineIndex = -1;
       let nextLineY = Infinity;
       let minDistance = Infinity;
-      let shouldReverseNextLine = false;
 
       for (let i = 0; i < sortedLines.length; i++) {
         if (!processedLines.has(i)) {
           const lineY = sortedLines[i][0][1];
           if (lineY > currentLine[0][1] && lineY < nextLineY) {
-            // Calculate distances from both ends of current line to both ends of next line
-            const currentStart = currentLine[0];
+            // Calculate distance from current end to next line's start
             const currentEnd = currentLine[currentLine.length - 1];
             const nextStart = sortedLines[i][0];
-            const nextEnd = sortedLines[i][sortedLines[i].length - 1];
 
-            // Calculate connection distances using Euclidean distance
-            const distances = [
-              {
-                distance: Math.hypot(
-                  currentEnd[0] - nextStart[0],
-                  currentEnd[1] - nextStart[1]
-                ),
-                reverse: false,
-              },
-              {
-                distance: Math.hypot(
-                  currentEnd[0] - nextEnd[0],
-                  currentEnd[1] - nextEnd[1]
-                ),
-                reverse: true,
-              },
-              {
-                distance: Math.hypot(
-                  currentStart[0] - nextStart[0],
-                  currentStart[1] - nextStart[1]
-                ),
-                reverse: false,
-              },
-              {
-                distance: Math.hypot(
-                  currentStart[0] - nextEnd[0],
-                  currentStart[1] - nextEnd[1]
-                ),
-                reverse: true,
-              },
-            ];
-
-            const shortest = distances.reduce((min, curr) =>
-              curr.distance < min.distance ? curr : min
+            const distance = Math.hypot(
+              currentEnd[0] - nextStart[0],
+              currentEnd[1] - nextStart[1]
             );
 
-            if (shortest.distance < minDistance) {
-              minDistance = shortest.distance;
+            if (distance < minDistance) {
+              minDistance = distance;
               nextLineIndex = i;
               nextLineY = lineY;
-              shouldReverseNextLine = shortest.reverse;
             }
           }
         }
@@ -252,25 +246,17 @@ function createPathSegments(rasterized, maxConnectionDistance = 10) {
       if (nextLineIndex !== -1 && minDistance <= maxConnectionDistance) {
         const nextLine = sortedLines[nextLineIndex];
         const currentEnd = currentLine[currentLine.length - 1];
-        const nextStart = shouldReverseNextLine
-          ? nextLine[nextLine.length - 1]
-          : nextLine[0];
+        const nextStart = nextLine[0];
 
         // Add connecting line
         currentSegment.push([currentEnd[0], currentEnd[1]]);
         currentSegment.push([nextStart[0], nextStart[1]]);
 
-        // Add the next line (reversed if needed)
-        if (shouldReverseNextLine) {
-          currentSegment.push(...[...nextLine].reverse());
-        } else {
-          currentSegment.push(...nextLine);
-        }
+        // Add the next line
+        currentSegment.push(...nextLine);
 
         // Update state
-        currentLine = shouldReverseNextLine
-          ? [...nextLine].reverse()
-          : nextLine;
+        currentLine = nextLine;
         currentLineIndex = nextLineIndex;
         processedLines.add(currentLineIndex);
       } else {
@@ -279,7 +265,41 @@ function createPathSegments(rasterized, maxConnectionDistance = 10) {
         break;
       }
     }
+
+    // Flip the starting direction for the next segment
+    startFromLeft = !startFromLeft;
   }
 
   return pathSegments;
+}
+
+// Helper function to calculate the center point of a polygon
+function calculateCenter(polygon) {
+  let sumX = 0;
+  let sumY = 0;
+  for (const [x, y] of polygon) {
+    sumX += x;
+    sumY += y;
+  }
+  return [sumX / polygon.length, sumY / polygon.length];
+}
+
+// Helper function to rotate a point around a center
+function rotatePoint(point, center, angleDegrees) {
+  const [x, y] = point;
+  const [cx, cy] = center;
+  const angleRadians = (angleDegrees * Math.PI) / 180;
+
+  // Translate point to origin
+  const dx = x - cx;
+  const dy = y - cy;
+
+  // Rotate
+  const cos = Math.cos(angleRadians);
+  const sin = Math.sin(angleRadians);
+  const rotatedX = dx * cos - dy * sin;
+  const rotatedY = dx * sin + dy * cos;
+
+  // Translate back
+  return [rotatedX + cx, rotatedY + cy];
 }

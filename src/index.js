@@ -25,6 +25,7 @@ import { exportDST } from "./plugins/exportDST.js";
 import { demoModal } from "./plugins/customModalDemo.js";
 import { bitmap } from "./plugins/bitmap.js";
 import { raster } from "./plugins/raster.js";
+import { scale } from "./plugins/scale.js";
 
 export const STATE = {
   tool: "SELECT",
@@ -51,7 +52,7 @@ export const STATE = {
   grid: true,
   adaptiveGrid: false,
   panZoomMethods: null,
-  plugins: [fill, stroke, testDup, exportDST, demoModal, bitmap, raster],
+  plugins: [fill, stroke, testDup, exportDST, demoModal, bitmap, raster, scale],
   currentPath: null,
   editingPath: null,
   dispatch(args) {
@@ -395,6 +396,7 @@ export function init() {
     for (const key in newState) {
       state[key] = newState[key];
     }
+    evaluateAllLayers();
   });
 
   addCaching(state);

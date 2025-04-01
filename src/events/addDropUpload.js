@@ -7,7 +7,7 @@ export function addDropUpload(callback, ops = {}) {
   dropScreen.className =
     "data-[hidden]:hidden fixed top-0 left-0 w-full h-full bg-gray-700 bg-opacity-50 flex items-center justify-center";
   dropScreen.innerHTML = `
-    <h2 class="text-2xl text-white">Drop your ".sketch.json" files here!</h2>
+    <h2 class="text-2xl text-white">Drop your ".outlet.json" files here!</h2>
   `;
   dropScreen.setAttribute("data-hidden", "");
 

@@ -1,6 +1,8 @@
 import { html } from "lit-html";
 import { download } from "../utils/download.js";
 import { patchState } from "../index.js";
+import { bounds } from "../utils/bounds.js";
+import { convertPathToPolylines } from "../utils/convertPathToPolylines.js";
 
 export function drawTopBar(state) {
   return html`
@@ -14,8 +16,9 @@ export function drawTopBar(state) {
           const file = JSON.stringify({
             geometries: state.geometries,
             params: state.params,
+            layers: state.layers,
           });
-          download(`${name}.sketch.json`, file);
+          download(`${name}.outlet.json`, file);
         }}
         class="hover:bg-gray-200 w-fit p-2 cursor-pointer"
       >
@@ -29,6 +32,39 @@ export function drawTopBar(state) {
         class="hover:bg-gray-200 w-fit p-2 cursor-pointer"
       >
         Clear
+      </div>
+
+      <div
+        @click=${(e) => {
+          // Get all paths from all layers
+          const allPaths = state.layers.flatMap(
+            (layer) => layer.outputGeometry || []
+          );
+
+          // Convert paths to polylines
+          const polylines = allPaths.flatMap((path) => {
+            if (path.type === "path") {
+              return convertPathToPolylines(path.data);
+            }
+            return [];
+          });
+
+          // Calculate bounds
+          const b = bounds(polylines);
+
+          // Add some padding
+          const padding = 50;
+          const limits = {
+            x: [b.xMin - padding, b.xMax + padding],
+            y: [b.yMin - padding, b.yMax + padding],
+          };
+
+          // Snap view to content
+          state.panZoomMethods.setScaleXY(limits);
+        }}
+        class="hover:bg-gray-200 w-fit p-2 cursor-pointer"
+      >
+        Fit to Content
       </div>
 
       <div class="relative group">

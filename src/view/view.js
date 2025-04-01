@@ -35,7 +35,11 @@ export function view(state) {
 
       <div class="flex flex-1 overflow-hidden">
         <div class="relative flex-1">
-          <svg sketch-board class="w-[100%] h-[100%]">
+          <svg
+            sketch-board
+            class="w-[100%] h-[100%]"
+            style="transform: scale(1)"
+          >
             ${state.panZoomMethods && state.gridSize > 0 && state.grid
               ? drawGrid(
                   state.panZoomMethods.x(),
