@@ -31,7 +31,7 @@ import { translate } from "./plugins/translate.js";
 import { align } from "./plugins/align.js";
 import { distribute } from "./plugins/distribute.js";
 import { hide } from "./plugins/hide.js";
-
+import { offset } from "./plugins/offset.js";
 export const STATE = {
   tool: "SELECT",
   params: {},
@@ -63,6 +63,7 @@ export const STATE = {
     rotate,
     scale,
     align,
+    offset,
     distribute,
     // testDup,
     // demoModal,
