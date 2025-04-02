@@ -19,6 +19,7 @@ export function addHotKeys(state) {
     if (e.key === "Escape") {
       clearEdgeStartIfNoConnections(state);
       state.currentPoint = null;
+      state.edgeStart = null;
       state.selectedGeometry = new Set();
     }
 

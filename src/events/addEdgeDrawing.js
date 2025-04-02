@@ -5,11 +5,10 @@ import { evaluateAllLayers } from "../utils/evaluateAllLayers.js";
 export function addEdgeDrawing(el, state) {
   const listener = createListener(el);
 
-  let currentPoint = null;
-  let edgeStart = null;
+  state.currentPoint = null;
+  state.edgeStart = null;
 
   function reset() {
-    edgeStart = null;
     state.currentPoint = null;
     state.edgeStart = null;
   }
@@ -19,13 +18,12 @@ export function addEdgeDrawing(el, state) {
       reset();
       return;
     }
-    if (currentPoint === null) return;
+    if (state.currentPoint === null) return;
 
     const pt = getPointWithSuggestions(e);
-    currentPoint = pt;
     state.currentPoint = pt;
 
-    const { x, y, overlap } = currentPoint;
+    const { x, y, overlap } = state.currentPoint;
 
     let pointId;
     if (overlap === null) {
@@ -34,14 +32,20 @@ export function addEdgeDrawing(el, state) {
       pointId = overlap;
     }
 
-    if (edgeStart === null) {
-      edgeStart = pointId;
-      state.edgeStart = edgeStart;
-    } else if (edgeStart === pointId) {
+    if (state.edgeStart === null) {
+      state.edgeStart = pointId;
+    } else if (state.edgeStart === pointId) {
     } else {
-      addEdge(edgeStart, pointId);
-      reset();
+      addEdge(state.edgeStart, pointId);
       evaluateAllLayers();
+
+      // if I'm not holding shift then reset otherwise
+      // if im holding shift then start a new edge from this point
+      if (!e.shiftKey) {
+        reset();
+      } else {
+        state.edgeStart = pointId;
+      }
     }
   });
 
@@ -56,7 +60,6 @@ export function addEdgeDrawing(el, state) {
     }
 
     const pt = getPointWithSuggestions(e);
-    currentPoint = pt;
     state.currentPoint = pt;
   });
 
