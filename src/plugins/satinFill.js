@@ -42,7 +42,9 @@ export const satinFill = {
       for (const polyline of child.polylines) {
         if (isPolygonClosed(polyline)) {
           // Satin fill the polygon
-          const stitchPolyline = satinFillPolygon(polyline);
+          const stitchPolyline = satinFillPolygon(
+            polyline.slice(0, polyline.length - 1)
+          );
 
           // If we already have data for this ID, append to it
           if (pathsByID.has(child.id)) {
@@ -91,7 +93,7 @@ function initializeEdges(polygon) {
     const maxY = Math.max(y0, y1);
     const xAtMinY = y0 <= y1 ? x0 : x1;
     const slope = calculateSlope(x0, y0, x1, y1);
-    edges.push([minY, maxY, xAtMinY, slope]);
+    edges.push({ minY, maxY, xAtMinY, slope });
   }
 
   return edges;
@@ -100,84 +102,84 @@ function initializeEdges(polygon) {
 function initializeGlobalEdgeTable(edges) {
   // Sort edges by minY, then by xAtMinY if minY is equal
   let globalEdgeTable = edges
-    .sort((a, b) => (a[0] === b[0] ? a[2] - b[2] : a[0] - b[0]))
+    .sort((a, b) =>
+      a.minY === b.minY ? a.xAtMinY - b.xAtMinY : a.minY - b.minY
+    )
     // Filter out horizontal edges (slope = 0)
-    .filter((edge) => edge[3] !== 0);
+    .filter((edge) => edge.slope !== 0);
 
   return globalEdgeTable;
 }
 
-function initializeActiveEdgeTable(globalEdgeTable, scanLine) {
-  const activeEdgeTable = [];
-  for (const edge of globalEdgeTable) {
-    if (edge[0] === scanLine) {
-      activeEdgeTable.push([edge[1], edge[2], 1 / edge[3]]);
-    } else if (edge[0] > scanLine) {
-      break;
-    }
+function addEdgesToActiveEdgeTable(globalEdgeTable, activeEdgeTable, scanline) {
+  // Add new edges from global edge table to active edge table
+  while (globalEdgeTable.length > 0 && globalEdgeTable[0].minY === scanline) {
+    const { maxY, xAtMinY, slope } = globalEdgeTable[0];
+    activeEdgeTable.push({
+      maxY, // maxY
+      currentX: xAtMinY, // x at minY
+      dx: 1 / slope, // inverse slope
+    });
+    globalEdgeTable.shift();
   }
-  activeEdgeTable.sort((a, b) => a[1] - b[1]);
-  return activeEdgeTable;
+
+  activeEdgeTable.sort((a, b) => a.currentX - b.currentX);
 }
 
 function satinFillPolygon(polygon) {
   const edges = initializeEdges(polygon);
   const globalEdgeTable = initializeGlobalEdgeTable(edges);
 
-  let scanLine = Math.min(...edges.map((edge) => edge[0])); // find the starting y value
-  let activeEdgeTable = initializeActiveEdgeTable(globalEdgeTable, scanLine);
+  let scanLine = Math.min(...edges.map((edge) => edge.minY)); // find the starting y value
+  let activeEdgeTable = [];
+  addEdgesToActiveEdgeTable(globalEdgeTable, activeEdgeTable, scanLine);
 
-  const stitches = [];
-  console.log("BEGIN SCANLINE");
+  const stitchRegions = [];
+
   // Iterate over each scan-line until active edge table is empty
   while (activeEdgeTable.length > 0) {
-    console.log(activeEdgeTable);
-    // Create stitches between x-values of odd and even parity edge pairs
-    console.log("FILLING REGIONS", activeEdgeTable.length);
-
     if (activeEdgeTable.length % 2 === 0) {
-      for (let i = 0; i < activeEdgeTable.length; i += 2) {
-        const xStart = activeEdgeTable[i][1];
-        const xEnd = activeEdgeTable[i + 1][1];
+      const numPairs = activeEdgeTable.length / 2;
 
-        stitches.push([xStart, scanLine]);
-        stitches.push([xEnd, scanLine]);
+      if (
+        stitchRegions.length === 0 ||
+        numPairs !== stitchRegions.at(-1).length
+      ) {
+        //Push a new region
+        stitchRegions.push(
+          Array(numPairs)
+            .fill()
+            .map(() => [])
+        );
       }
+
+      for (let i = 0; i < activeEdgeTable.length; i += 2) {
+        const xStart = activeEdgeTable[i].currentX;
+        const xEnd = activeEdgeTable[i + 1].currentX;
+
+        stitchRegions.at(-1)[i / 2].push([xStart, scanLine]);
+        stitchRegions.at(-1)[i / 2].push([xEnd, scanLine]);
+      }
+    } else {
+      console.warn("ODD NUMBER OF EDGES at scanline", scanLine);
     }
+
     // increment scan line
     scanLine++;
 
-    // Remove edges that end at current scan line
-    activeEdgeTable = activeEdgeTable.filter((edge) => edge[0] !== scanLine);
+    // Remove edges that end before current scan line
+    activeEdgeTable = activeEdgeTable.filter((edge) => edge.maxY > scanLine);
 
     // Update x-coordinates using inverse slope
-    activeEdgeTable = activeEdgeTable.map((edge) => [
-      edge[0],
-      edge[1] + edge[2], // Add inverse slope to x-coordinate
-      edge[2],
-    ]);
+    activeEdgeTable = activeEdgeTable.map(({ maxY, currentX, dx }) => ({
+      maxY,
+      currentX: currentX + dx,
+      dx,
+    }));
 
-    // Keep only edges that intersect current scan line
-    // activeEdgeTable = activeEdgeTable.filter((edge) => edge[0] === scanLine);
-
-    console.log("ADDING NEW EDGES", scanLine);
-    console.log(globalEdgeTable);
-
-    // Add new edges from global edge table to active edge table
-    while (globalEdgeTable.length > 0 && globalEdgeTable[0][0] === scanLine) {
-      activeEdgeTable.push([
-        globalEdgeTable[0][1], // maxY
-        globalEdgeTable[0][2], // x at minY
-        1 / globalEdgeTable[0][3], // inverse slope
-      ]);
-      globalEdgeTable.shift();
-    }
-
-    // Sort active edge table by x-coordinate
-    activeEdgeTable.sort((a, b) => a[1] - b[1]);
+    addEdgesToActiveEdgeTable(globalEdgeTable, activeEdgeTable, scanLine);
   }
 
-  console.log("sTITCHES");
-  console.log(stitches);
-  return stitches;
+  console.log("STITCH REGIONS", stitchRegions);
+  return stitchRegions.flat(2);
 }
