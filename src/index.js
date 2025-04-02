@@ -31,6 +31,7 @@ import { translate } from "./plugins/translate.js";
 import { align } from "./plugins/align.js";
 import { distribute } from "./plugins/distribute.js";
 import { hide } from "./plugins/hide.js";
+import { satinFill } from "./plugins/satinFill.js";
 
 export const STATE = {
   tool: "SELECT",
@@ -69,6 +70,7 @@ export const STATE = {
     bitmap,
     // raster,
     rasterPath,
+    satinFill,
     exportDST,
     hide,
   ],
