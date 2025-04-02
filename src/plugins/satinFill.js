@@ -93,7 +93,14 @@ function initializeEdges(polygon) {
     const maxY = Math.max(y0, y1);
     const xAtMinY = y0 <= y1 ? x0 : x1;
     const slope = calculateSlope(x0, y0, x1, y1);
-    edges.push({ minY, maxY, xAtMinY, slope });
+    edges.push({
+      minY,
+      maxY,
+      xAtMinY,
+      slope,
+      v0: y0 < y1 ? i : (i + 1) % numVertices,
+      v1: y0 < y1 ? (i + 1) % numVertices : i,
+    });
   }
 
   return edges;
@@ -114,11 +121,13 @@ function initializeGlobalEdgeTable(edges) {
 function addEdgesToActiveEdgeTable(globalEdgeTable, activeEdgeTable, scanline) {
   // Add new edges from global edge table to active edge table
   while (globalEdgeTable.length > 0 && globalEdgeTable[0].minY === scanline) {
-    const { maxY, xAtMinY, slope } = globalEdgeTable[0];
+    const { maxY, xAtMinY, slope, v0, v1 } = globalEdgeTable[0];
     activeEdgeTable.push({
       maxY, // maxY
       currentX: xAtMinY, // x at minY
       dx: 1 / slope, // inverse slope
+      v0: v0,
+      v1: v1,
     });
     globalEdgeTable.shift();
   }
@@ -140,25 +149,55 @@ function satinFillPolygon(polygon) {
   while (activeEdgeTable.length > 0) {
     if (activeEdgeTable.length % 2 === 0) {
       const numPairs = activeEdgeTable.length / 2;
+      const prevRegions = stitchRegions.at(-1);
 
-      if (
-        stitchRegions.length === 0 ||
-        numPairs !== stitchRegions.at(-1).length
-      ) {
-        //Push a new region
+      if (stitchRegions.length === 0 || numPairs !== prevRegions.length) {
+        // Push a new region
         stitchRegions.push(
           Array(numPairs)
             .fill()
-            .map(() => [])
+            .map((_, i) => {
+              const startEdge = activeEdgeTable[i * 2];
+              const endEdge = activeEdgeTable[i * 2 + 1];
+
+              return {
+                hallway: [
+                  [
+                    startEdge.currentX +
+                      (endEdge.currentX - startEdge.currentX) / 2,
+                    scanLine,
+                  ],
+                ],
+                currLeftVert: startEdge.v0, // left vertex of hallway
+                currRightVert: endEdge.v0, // right vertex of hallway
+                stitches: [],
+              };
+            })
         );
-      }
-
+      } // Process each pair of edges
       for (let i = 0; i < activeEdgeTable.length; i += 2) {
-        const xStart = activeEdgeTable[i].currentX;
-        const xEnd = activeEdgeTable[i + 1].currentX;
+        const region = stitchRegions.at(-1)[i / 2];
 
-        stitchRegions.at(-1)[i / 2].push([xStart, scanLine]);
-        stitchRegions.at(-1)[i / 2].push([xEnd, scanLine]);
+        const startEdge = activeEdgeTable[i];
+        const endEdge = activeEdgeTable[i + 1];
+
+        // add another hallway corner
+        if (
+          (startEdge.v0 !== region.currLeftVert &&
+            endEdge.v0 === region.currRightVert) ||
+          (startEdge.v0 === region.currLeftVert &&
+            endEdge.v0 !== region.currRightVert)
+        ) {
+          region.hallway.push([
+            startEdge.currentX + (endEdge.currentX - startEdge.currentX) / 2,
+            scanLine,
+          ]);
+          region.currLeftVert = startEdge.v0;
+          region.currRightVert = endEdge.v0;
+        }
+
+        region.stitches.push([startEdge.currentX, scanLine]);
+        region.stitches.push([endEdge.currentX, scanLine]);
       }
     } else {
       console.warn("ODD NUMBER OF EDGES at scanline", scanLine);
@@ -171,15 +210,35 @@ function satinFillPolygon(polygon) {
     activeEdgeTable = activeEdgeTable.filter((edge) => edge.maxY > scanLine);
 
     // Update x-coordinates using inverse slope
-    activeEdgeTable = activeEdgeTable.map(({ maxY, currentX, dx }) => ({
+    activeEdgeTable = activeEdgeTable.map(({ maxY, currentX, dx, v0, v1 }) => ({
       maxY,
       currentX: currentX + dx,
       dx,
+      v0,
+      v1,
     }));
 
     addEdgesToActiveEdgeTable(globalEdgeTable, activeEdgeTable, scanLine);
   }
 
-  console.log("STITCH REGIONS", stitchRegions);
-  return stitchRegions.flat(2);
+  console.log("STITCH REGIONS", stitchRegions.flat(1));
+
+  const stitches = stitchRegions
+    .map((regionGroup, i) => {
+      return regionGroup.map((region) => {
+        const prevRegion = stitchRegions[i - 1];
+        if (prevRegion) {
+          if (regionGroup.length > prevRegion.length) {
+            return [...region.hallway.toReversed(), ...region.stitches];
+          } else {
+            return [...region.hallway, ...region.stitches];
+          }
+        } else {
+          return [...region.hallway.toReversed(), ...region.stitches];
+        }
+      });
+    })
+    .flat(2);
+  console.log(stitches);
+  return stitches;
 }
