@@ -93,7 +93,11 @@ export const rasterFill = {
       };
     });
 
-    sorted.push(medialPolylines.polylines);
+    // sorted.push(medialPolylines.polylines);
+
+    // Create merged path
+    const mergedPath = createMergedPath(sorted, medialPolylines.polylines);
+    sorted.push(mergedPath);
 
     return rotateGeometry(sorted, center, angle);
   },
@@ -422,4 +426,59 @@ function hasValidVerticalPath(
   }
 
   return true;
+}
+
+function createMergedPath(groups, medialPolylines) {
+  const mergedPoints = [];
+  const visitedGroups = new Set();
+
+  for (let i = 0; i < groups.length; i++) {
+    const currentGroup = groups[i];
+    const currentPolyline = currentGroup.polylines[0];
+
+    // Add current group's points
+    mergedPoints.push(...currentPolyline);
+    visitedGroups.add(i);
+
+    // If not the last group, find path to next group
+    if (i < groups.length - 1) {
+      const nextGroup = groups[i + 1];
+      const nextPolyline = nextGroup.polylines[0];
+
+      // Get end point of current group and start point of next group
+      const endPoint = currentPolyline[currentPolyline.length - 1];
+      const startPoint = nextPolyline[0];
+
+      // Find path between these points using scanline groups
+      const connectingPath = findPathBetweenGroups(
+        i,
+        i + 1,
+        groups,
+        visitedGroups,
+        medialPolylines
+      );
+
+      if (connectingPath.length > 0) {
+        mergedPoints.push(...connectingPath);
+      }
+    }
+  }
+
+  return {
+    polylines: [mergedPoints],
+    attributes: {
+      stroke: "black",
+      strokeWidth: 2,
+    },
+  };
+}
+
+function findPathBetweenGroups(
+  startGroupIndex,
+  endGroupIndex,
+  groups,
+  visitedGroups,
+  medialPolylines
+) {
+  // this is imcomplete
 }
