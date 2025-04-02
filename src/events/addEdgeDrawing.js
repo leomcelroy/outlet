@@ -41,7 +41,8 @@ export function addEdgeDrawing(el, state) {
       // if I'm not holding shift then reset otherwise
       // if im holding shift then start a new edge from this point
       if (!e.shiftKey) {
-        reset();
+        state.edgeStart = null;
+        state.currentPoint = getPointWithSuggestions(e);
       } else {
         state.edgeStart = pointId;
       }

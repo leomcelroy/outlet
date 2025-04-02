@@ -65,23 +65,19 @@ function renderLayerTree(tree, state) {
               pts
             </span>
             <div class="flex items-center gap-1">
-              ${node.id !== "DEFAULT_LAYER"
-                ? html`
-                    <button
-                      @click=${(e) => {
-                        e.stopPropagation();
-                        state.dispatch({
-                          type: "DELETE_LAYER",
-                          layerId: node.id,
-                        });
-                      }}
-                      class="text-gray-400 hover:text-red-500 text-sm px-1 cursor-pointer"
-                      title="Delete layer"
-                    >
-                      ×
-                    </button>
-                  `
-                : ""}
+              <button
+                @click=${(e) => {
+                  e.stopPropagation();
+                  state.dispatch({
+                    type: "DELETE_LAYER",
+                    layerId: node.id,
+                  });
+                }}
+                class="text-gray-400 hover:text-red-500 text-sm px-1 cursor-pointer"
+                title="Delete layer"
+              >
+                ×
+              </button>
               <span
                 draggable-layer-trigger
                 class="flex-shrink-0 cursor-move text-gray-500 hover:text-gray-700"
