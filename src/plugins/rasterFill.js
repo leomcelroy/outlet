@@ -35,8 +35,10 @@ export const rasterFill = {
       return inputGeometry;
     }
 
+    const center = [0, 0];
+
+    const scanLineGroups = [];
     const allScanLines = [];
-    const medialPolylines = [];
 
     for (const child of inputGeometry) {
       // Sort polylines by length (descending) to identify outer boundary and holes
@@ -47,9 +49,6 @@ export const rasterFill = {
       if (sortedPolylines.length > 0 && isPolygonClosed(sortedPolylines[0])) {
         const outerBoundary = sortedPolylines[0];
         const holes = sortedPolylines.slice(1).filter(isPolygonClosed);
-
-        // Calculate center point for rotation
-        const center = calculateCenter(outerBoundary);
 
         // Rotate the polygon and holes by -angle
         const rotatedOuterBoundary = outerBoundary.map((point) =>
@@ -68,35 +67,119 @@ export const rasterFill = {
         // Group scan lines into connected sections
         const groupedScanLines = groupScanLines(scanLines, density);
 
-        // Convert each scan line to polylines and rotate back, adding group attributes
-        const rotatedScanLines = groupedScanLines
-          .map((group, groupIndex) =>
-            group.map((line) => ({
-              polylines: [
-                line.map(([x, y]) => {
-                  // Rotate the point back by the original angle
-                  const [rotatedX, rotatedY] = rotatePoint(
-                    [x, y],
-                    center,
-                    angle
-                  );
-                  return [rotatedX, rotatedY];
-                }),
-              ],
-              attributes: {
-                stroke: `hsl(${(groupIndex * 137.5) % 360}, 70%, 50%)`, // Golden angle to get good color distribution
-              },
-            }))
-          )
-          .flat();
-
-        allScanLines.push(...rotatedScanLines);
+        scanLineGroups.push(...groupedScanLines);
+        allScanLines.push(...scanLines);
       }
     }
 
-    return [...allScanLines];
+    console.log({ allScanLines });
+
+    const medialPolylines = makeMedialLineGraph(
+      allScanLines,
+      density
+    ).polylines;
+
+    console.log({ medialPolylines });
+
+    // Convert color groups into geometry objects with zigzag pattern
+    const sorted = scanLineGroups.reverse().map((group, groupIndex) => {
+      const zigzagPoints = [];
+      group.forEach((scanLine, i) => {
+        zigzagPoints.push(i % 2 === 0 ? scanLine[0] : scanLine[1]);
+      });
+
+      return {
+        polylines: [zigzagPoints.reverse()],
+        attributes: {
+          stroke: `hsl(${(groupIndex * 137.5) % 360}, 70%, 50%)`,
+        },
+      };
+    });
+
+    sorted.push(medialPolylines);
+
+    return rotateGeometry(sorted, center, angle);
   },
 };
+
+function rotateGeometry(geometry, center, angle) {
+  return geometry.map((child) => ({
+    ...child,
+    polylines: rotatePolylines(child.polylines, center, angle),
+  }));
+}
+
+function rotatePolylines(polylines, center, angle) {
+  return polylines.map((polyline) =>
+    polyline.map((point) => rotatePoint(point, center, angle))
+  );
+}
+
+function makeMedialLineGraph(scanLines, stepSize) {
+  const nodes = [];
+  const edges = [];
+  const polylines = [];
+
+  // Create nodes from medial points of each scan line
+  scanLines.forEach((scanLine) => {
+    const line = scanLine;
+    const x1 = line[0][0];
+    const y1 = line[0][1];
+    const x2 = line[line.length - 1][0];
+    const midX = (x1 + x2) / 2;
+    const midY = y1;
+    nodes.push([midX, midY]);
+  });
+
+  // For each scan line, find valid connections to lines above it
+  for (let i = 0; i < scanLines.length; i++) {
+    const currentLine = scanLines[i];
+    const currentY = currentLine[0][1];
+
+    // Get x range of current line
+    const currentXMin = Math.min(...currentLine.map((p) => p[0]));
+    const currentXMax = Math.max(...currentLine.map((p) => p[0]));
+
+    // Look for valid connections to lines above
+    for (let j = 0; j < scanLines.length; j++) {
+      if (i === j) continue;
+
+      const nextLine = scanLines[j];
+      const nextY = nextLine[0][1];
+
+      // Skip if not above current line
+      if (nextY <= currentY) continue;
+
+      // Check if y-separation is approximately equal to stepSize
+      const yDiff = nextY - currentY;
+      if (Math.abs(yDiff - stepSize) > stepSize * 0.3) continue; // 30% tolerance
+
+      // Get x range of next line
+      const nextXMin = Math.min(...nextLine.map((p) => p[0]));
+      const nextXMax = Math.max(...nextLine.map((p) => p[0]));
+
+      // Check if x ranges overlap
+      const overlapSize =
+        Math.min(currentXMax, nextXMax) - Math.max(currentXMin, nextXMin);
+      if (overlapSize > stepSize) {
+        // Require overlap of at least 30% of stepSize
+        edges.push([i, j]);
+        polylines.push([nodes[i], nodes[j]]);
+      }
+    }
+  }
+
+  return {
+    nodes,
+    edges,
+    polylines: {
+      polylines,
+      attributes: {
+        stroke: "black",
+      },
+    },
+  };
+}
 
 function isPolygonClosed(polygon) {
   if (polygon.length < 3) return false;
@@ -189,17 +272,6 @@ function findHorizontalIntersections(polygon, scanY) {
   }
 
   return xs;
-}
-
-// Helper function to calculate the center point of a polygon
-function calculateCenter(polygon) {
-  let sumX = 0;
-  let sumY = 0;
-  for (const [x, y] of polygon) {
-    sumX += x;
-    sumY += y;
-  }
-  return [sumX / polygon.length, sumY / polygon.length];
 }
 
 // Helper function to rotate a point around a center
@@ -345,7 +417,9 @@ function hasValidVerticalPath(
     const lineXMax = Math.max(...line.map((p) => p[0]));
 
     // Check if this line's x range overlaps with our overlap region
-    if (!(lineXMax < overlapMinX || lineXMin > overlapMaxX)) {
+    const lineOverlapSize =
+      Math.min(lineXMax, overlapMaxX) - Math.max(lineXMin, overlapMinX);
+    if (lineOverlapSize > stepSize) {
       return false;
     }
   }
