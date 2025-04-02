@@ -90,95 +90,11 @@ export const rasterFill = {
           )
           .flat();
 
-        // Create medial polylines for each group
-        const rotatedMedialPolylines = groupedScanLines.map(
-          (group, groupIndex) => {
-            // Calculate medial points for each scan line in the group
-            const medialPoints = group.map((line) => {
-              const x1 = line[0][0];
-              const y1 = line[0][1];
-              const x2 = line[line.length - 1][0];
-              const y2 = line[line.length - 1][1];
-              const midX = (x1 + x2) / 2;
-              const midY = y1; // y1 and y2 are the same for horizontal scan lines
-
-              // Rotate the medial point back by the original angle
-              return rotatePoint([midX, midY], center, angle);
-            });
-
-            // Create a polyline connecting all medial points
-            return {
-              polylines: [medialPoints],
-              attributes: {
-                stroke: `hsl(${(groupIndex * 137.5) % 360}, 70%, 50%)`,
-                strokeDasharray: "5,5", // Make the medial line dashed
-              },
-            };
-          }
-        );
-
-        // Connect medial lines between groups
-        const medialConnections = [];
-        for (let i = 0; i < groupedScanLines.length; i++) {
-          for (let j = i + 1; j < groupedScanLines.length; j++) {
-            const group1 = groupedScanLines[i];
-            const group2 = groupedScanLines[j];
-
-            // Find the closest medial points between the two groups
-            let closestPoints = null;
-            let minDistance = Infinity;
-
-            for (const line1 of group1) {
-              const x1 = line1[0][0];
-              const y1 = line1[0][1];
-              const x2 = line1[line1.length - 1][0];
-              const midX1 = (x1 + x2) / 2;
-
-              for (const line2 of group2) {
-                const x3 = line2[0][0];
-                const y2 = line2[0][1];
-                const x4 = line2[line2.length - 1][0];
-                const midX2 = (x3 + x4) / 2;
-
-                // Check if x-ranges overlap
-                if (
-                  !(
-                    Math.max(x1, x2) < Math.min(x3, x4) ||
-                    Math.min(x1, x2) > Math.max(x3, x4)
-                  )
-                ) {
-                  const distance = Math.abs(y2 - y1);
-                  if (distance < minDistance) {
-                    minDistance = distance;
-                    closestPoints = {
-                      point1: rotatePoint([midX1, y1], center, angle),
-                      point2: rotatePoint([midX2, y2], center, angle),
-                    };
-                  }
-                }
-              }
-            }
-
-            // If we found close points, create a connection
-            if (closestPoints && minDistance < 2) {
-              // 2 is a threshold for connection distance
-              medialConnections.push({
-                polylines: [[closestPoints.point1, closestPoints.point2]],
-                attributes: {
-                  stroke: `hsl(${((i + j) * 137.5) % 360}, 70%, 50%)`,
-                  strokeDasharray: "3,3", // Make the connections dashed
-                },
-              });
-            }
-          }
-        }
-
         allScanLines.push(...rotatedScanLines);
-        medialPolylines.push(...rotatedMedialPolylines, ...medialConnections);
       }
     }
 
-    return [...allScanLines, ...medialPolylines];
+    return [...allScanLines];
   },
 };
 
