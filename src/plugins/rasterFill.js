@@ -74,10 +74,7 @@ export const rasterFill = {
 
     console.log({ allScanLines });
 
-    const medialPolylines = makeMedialLineGraph(
-      allScanLines,
-      density
-    ).polylines;
+    const medialPolylines = makeMedialLineGraph(allScanLines, density);
 
     console.log({ medialPolylines });
 
@@ -89,14 +86,14 @@ export const rasterFill = {
       });
 
       return {
-        polylines: [zigzagPoints.reverse()],
+        polylines: [groupIndex !== 0 ? zigzagPoints.reverse() : zigzagPoints],
         attributes: {
           stroke: `hsl(${(groupIndex * 137.5) % 360}, 70%, 50%)`,
         },
       };
     });
 
-    sorted.push(medialPolylines);
+    sorted.push(medialPolylines.polylines);
 
     return rotateGeometry(sorted, center, angle);
   },
