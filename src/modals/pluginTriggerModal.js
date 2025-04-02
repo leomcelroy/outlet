@@ -1,6 +1,4 @@
 import { html, render } from "lit-html";
-import { STATE } from "../index.js";
-import { evaluateAllLayers } from "../evaluateAllLayers.js";
 
 export function pluginTriggerModal(plugin, layer) {
   const process = plugin.process;

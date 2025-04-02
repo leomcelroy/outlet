@@ -1,8 +1,7 @@
 import { html } from "lit-html";
 import { download } from "../utils/download.js";
 import { patchState } from "../index.js";
-import { bounds } from "../utils/bounds.js";
-import { convertPathToPolylines } from "../utils/convertPathToPolylines.js";
+import { bounds } from "../utils/polylines/bounds.js";
 
 export function drawTopBar(state) {
   return html`
@@ -37,28 +36,21 @@ export function drawTopBar(state) {
       <div
         @click=${(e) => {
           // Get all paths from all layers
-          const allPaths = state.layers.flatMap(
+          const allOutputs = state.layers.flatMap(
             (layer) => layer.outputGeometry || []
           );
-
           // Convert paths to polylines
-          const polylines = allPaths.flatMap((path) => {
-            if (path.type === "path") {
-              return convertPathToPolylines(path.data);
-            }
-            return [];
+          const polylines = allOutputs.flatMap((path) => {
+            return path.polylines;
           });
-
           // Calculate bounds
           const b = bounds(polylines);
-
           // Add some padding
           const padding = 50;
           const limits = {
             x: [b.xMin - padding, b.xMax + padding],
             y: [b.yMin - padding, b.yMax + padding],
           };
-
           // Snap view to content
           state.panZoomMethods.setScaleXY(limits);
         }}
@@ -117,6 +109,27 @@ export function drawTopBar(state) {
               }}
               class="border border-gray-300 p-1 w-auto"
             />
+          </div>
+        </div>
+      </div>
+
+      <div class="relative group">
+        <div class="flex items-center hover:bg-gray-200 p-2 rounded">
+          View Options
+        </div>
+        <div class="absolute z-50 hidden group-hover:block bg-gray-200 w-max">
+          <div class="flex items-center p-2">
+            <input
+              type="checkbox"
+              ?checked=${state.showBaseGeometry}
+              class="mr-2 cursor-pointer"
+              @click=${() => {
+                patchState((state) => {
+                  state.showBaseGeometry = !state.showBaseGeometry;
+                });
+              }}
+            />
+            <span>Show Base Geometry</span>
           </div>
         </div>
       </div>

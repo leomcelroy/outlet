@@ -1,7 +1,5 @@
 import { html, svg } from "lit-html";
-import { getLayerTree } from "../getLayerTree.js";
-import { deleteGeometry } from "../utils/deleteGeometry.js";
-import { evaluateAllLayers } from "../evaluateAllLayers.js";
+import { getLayerTree } from "../utils/getLayerTree.js";
 
 export function drawLayerTree(state) {
   return html`
@@ -26,9 +24,6 @@ function renderLayerTree(tree, state) {
   return tree.map((node) => {
     const isExpanded = state.expandedLayers?.includes(node.id);
     const isActive = state.activeLayer === node.id;
-
-    // Filter out points from the geometry list
-    const visibleGeometry = node.geometry.filter((geo) => geo.type !== "point");
 
     return html`
       <div
@@ -62,6 +57,12 @@ function renderLayerTree(tree, state) {
               }}
             >
               ${node.name}
+            </span>
+            <span class="text-gray-500 text-xs m-2">
+              ${state.geometries.filter(
+                (geo) => geo.layer === node.id && geo.type === "point"
+              ).length}
+              pts
             </span>
             <div class="flex items-center gap-1">
               ${node.id !== "DEFAULT_LAYER"
@@ -101,56 +102,6 @@ function renderLayerTree(tree, state) {
         ${isExpanded
           ? html`
               <div class="ml-4">
-                ${visibleGeometry.map(
-                  (geo) => html`
-                    <div
-                      class="hover:bg-blue-100 px-1 cursor-pointer flex items-center justify-between ${state.editingPath ===
-                      geo.id
-                        ? "bg-blue-100"
-                        : ""}"
-                      draggable-path
-                      data-path-id=${geo.id}
-                      @click=${() => {
-                        if (geo.type === "path") {
-                          state.editingPath = geo.id;
-                          state.selectedGeometry = new Set();
-                          state.dispatch({ type: "SET_TOOL", tool: "SELECT" });
-                        } else {
-                          state.selectedGeometry.add(geo.id);
-                        }
-                      }}
-                    >
-                      <span>${geo.type} ${geo.id}</span>
-                      <div class="flex items-center gap-1">
-                        <button
-                          @click=${(e) => {
-                            e.stopPropagation();
-                            state.selectedGeometry = new Set([geo.id]);
-                            deleteGeometry(state);
-                            evaluateAllLayers();
-                          }}
-                          class="text-gray-400 hover:text-red-500 text-sm px-1 cursor-pointer"
-                          title="Delete path"
-                        >
-                          ×
-                        </button>
-                        <span
-                          draggable-path-trigger
-                          class="flex-shrink-0 cursor-move text-gray-500 hover:text-gray-700"
-                        >
-                          <svg width="16" height="16" viewBox="0 0 16 16">
-                            <circle cx="4" cy="4" r="1.5" />
-                            <circle cx="12" cy="4" r="1.5" />
-                            <circle cx="4" cy="8" r="1.5" />
-                            <circle cx="12" cy="8" r="1.5" />
-                            <circle cx="4" cy="12" r="1.5" />
-                            <circle cx="12" cy="12" r="1.5" />
-                          </svg>
-                        </span>
-                      </div>
-                    </div>
-                  `
-                )}
                 ${node.children.length > 0
                   ? renderLayerTree(node.children, state)
                   : ""}

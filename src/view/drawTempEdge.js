@@ -2,15 +2,15 @@ import { svg } from "lit-html";
 
 const PT_SIZE = 5;
 
-export function drawTempLine(state) {
-  const { currentPoint, lineStart } = state;
+export function drawTempEdge(state) {
+  const { currentPoint, edgeStart } = state;
 
-  if (lineStart && currentPoint) {
-    const lineStartPt = state.geometries.find((geo) => geo.id === lineStart);
+  if (edgeStart && currentPoint) {
+    const edgeStartPt = state.geometries.find((geo) => geo.id === edgeStart);
     return svg`
         <line
-          x1=${state.params[lineStartPt.x]}
-          y1=${state.params[lineStartPt.y]}
+          x1=${state.params[edgeStartPt.x]}
+          y1=${state.params[edgeStartPt.y]}
           x2=${currentPoint.x}
           y2=${currentPoint.y}
           stroke="blue"

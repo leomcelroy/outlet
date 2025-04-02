@@ -1,4 +1,4 @@
-import { STATE } from "./index.js";
+import { STATE } from "../index.js";
 
 export function getLayerTree() {
   const parentLayers = STATE.layers.filter((layer) => layer.parent === null);

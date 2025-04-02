@@ -44,7 +44,7 @@ export const rotate = {
       ],
     };
   },
-  process(controls, children) {
+  process(controls, inputGeometry) {
     const { angle, originX, originY } = controls;
     const radians = (angle * Math.PI) / 180;
 
@@ -54,16 +54,14 @@ export const rotate = {
     let minY = Infinity,
       maxY = -Infinity;
 
-    children.flat().forEach((path) => {
-      path.data.forEach((cmd) => {
-        if (cmd.x !== undefined) {
-          minX = Math.min(minX, cmd.x);
-          maxX = Math.max(maxX, cmd.x);
-        }
-        if (cmd.y !== undefined) {
-          minY = Math.min(minY, cmd.y);
-          maxY = Math.max(maxY, cmd.y);
-        }
+    inputGeometry.forEach((child) => {
+      child.polylines.forEach((polyline) => {
+        polyline.forEach(([x, y]) => {
+          minX = Math.min(minX, x);
+          maxX = Math.max(maxX, x);
+          minY = Math.min(minY, y);
+          maxY = Math.max(maxY, y);
+        });
       });
     });
 
@@ -96,26 +94,22 @@ export const rotate = {
     }
 
     // Process paths and rotate their data values
-    return children.flat().map((path) => ({
-      ...path,
-      data: path.data.map((cmd) => {
-        if (cmd.x === undefined || cmd.y === undefined) return cmd;
+    return inputGeometry.map((child) => ({
+      polylines: child.polylines.map((polyline) =>
+        polyline.map(([x, y]) => {
+          // Translate to origin
+          const dx = x - originXValue;
+          const dy = y - originYValue;
 
-        // Translate to origin
-        const x = cmd.x - originXValue;
-        const y = cmd.y - originYValue;
+          // Rotate
+          const rotatedX = dx * Math.cos(radians) - dy * Math.sin(radians);
+          const rotatedY = dx * Math.sin(radians) + dy * Math.cos(radians);
 
-        // Rotate
-        const rotatedX = x * Math.cos(radians) - y * Math.sin(radians);
-        const rotatedY = x * Math.sin(radians) + y * Math.cos(radians);
-
-        // Translate back
-        return {
-          ...cmd,
-          x: rotatedX + originXValue,
-          y: rotatedY + originYValue,
-        };
-      }),
+          // Translate back
+          return [rotatedX + originXValue, rotatedY + originYValue];
+        })
+      ),
+      attributes: child.attributes,
     }));
   },
 };

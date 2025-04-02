@@ -1,5 +1,4 @@
-import { evaluateAllLayers } from "../evaluateAllLayers.js";
-
+import { evaluateAllLayers } from "../utils/evaluateAllLayers.js";
 
 export function addCaching(state) {
   // Load initial state from session storage
@@ -10,15 +9,14 @@ export function addCaching(state) {
       state[key] = newState[key];
     }
   }
-  evaluateAllLayers()
-
+  evaluateAllLayers();
 
   // Save state every 5 seconds
   setInterval(() => {
     const file = JSON.stringify({
       geometries: state.geometries,
       params: state.params,
-      layers: state.layers
+      layers: state.layers,
     });
     sessionStorage.setItem("sketchState", file);
   }, 5000);

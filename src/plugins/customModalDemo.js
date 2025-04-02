@@ -48,8 +48,8 @@ export const demoModal = {
       ],
     };
   },
-  process(controls, children) {
+  process(controls, inputGeometry) {
     // Only process paths, apply fill to path attributes
-    return children.flat();
+    return inputGeometry;
   },
 };

@@ -1,10 +1,9 @@
 import { createRandStr } from "../utils/createRandStr.js";
-import { convertPathToPolylines } from "../utils/convertPathToPolylines.js";
 import { tajimaDSTExport } from "../drafts/tajimaDSTExport.js";
 
 import { downloadBuffer } from "../utils/downloadBuffer.js";
-import { bounds } from "../utils/bounds.js";
-import { translate, scale } from "../utils/affineTransformations.js";
+import { bounds } from "../utils/polylines/bounds.js";
+import { translate, scale } from "../utils/polylines/affineTransformations.js";
 
 const type = "exportDST";
 const name = "Export DST";
@@ -40,10 +39,12 @@ export const exportDST = {
       ],
     };
   },
-  process(controls, outputGeometry) {
-    const pls = outputGeometry
-      .map((path) => convertPathToPolylines(path.data))
-      .flat();
+  process(controls, inputGeometry) {
+    const pls = JSON.parse(
+      JSON.stringify(inputGeometry.flatMap((x) => x.polylines))
+    );
+
+    console.log({ pls, controls });
 
     const bbox = bounds(pls);
     const targetWidth = controls.maxDimension;

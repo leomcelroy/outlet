@@ -1,5 +1,4 @@
 import { createRandStr } from "../utils/createRandStr.js";
-import { convertPathToPolylines } from "../utils/convertPathToPolylines.js";
 
 const type = "rasterPath";
 const name = "Raster Path";
@@ -29,7 +28,7 @@ export const rasterPath = {
       ],
     };
   },
-  process(controls, children) {
+  process(controls, inputGeometry) {
     const { thickness, spacing } = controls;
 
     if (thickness < 0.5) {
@@ -42,36 +41,27 @@ export const rasterPath = {
     // Create a map to store paths by ID
     const pathsByID = new Map();
 
-    for (const path of children.flat()) {
-      const polylines = convertPathToPolylines(path.data);
-
-      for (const polyline of polylines) {
+    for (const child of inputGeometry) {
+      for (const polyline of child.polylines) {
         // Skip empty polylines
         if (!polyline || polyline.length === 0) continue;
 
-        const pathData = [];
         const perpendicularPoints = [];
 
         // Handle single point case
         if (polyline.length === 1) {
-          const point = polyline[0];
+          const [x, y] = polyline[0];
           // For a single point, create a small horizontal line
-          perpendicularPoints.push({
-            x: point[0] - thickness,
-            y: point[1],
-          });
-          perpendicularPoints.push({
-            x: point[0] + thickness,
-            y: point[1],
-          });
+          perpendicularPoints.push([x - thickness, y]);
+          perpendicularPoints.push([x + thickness, y]);
         } else {
           // First pass: create perpendicular lines along the path
           for (let i = 0; i < polyline.length - 1; i++) {
-            const currentPoint = polyline[i];
-            const nextPoint = polyline[i + 1];
+            const [x1, y1] = polyline[i];
+            const [x2, y2] = polyline[i + 1];
 
-            const segDx = nextPoint[0] - currentPoint[0];
-            const segDy = nextPoint[1] - currentPoint[1];
+            const segDx = x2 - x1;
+            const segDy = y2 - y1;
             const length = Math.sqrt(segDx * segDx + segDy * segDy);
 
             // Calculate perpendicular vector
@@ -84,77 +74,60 @@ export const rasterPath = {
             // Add points for perpendicular line
             for (let j = 0; j <= numSegments; j++) {
               const t = j / numSegments;
-              const x = currentPoint[0] + segDx * t;
-              const y = currentPoint[1] + segDy * t;
+              const x = x1 + segDx * t;
+              const y = y1 + segDy * t;
 
-              perpendicularPoints.push({
-                x: x + perpX * thickness,
-                y: y + perpY * thickness,
-              });
-              perpendicularPoints.push({
-                x: x - perpX * thickness,
-                y: y - perpY * thickness,
-              });
+              perpendicularPoints.push([
+                x + perpX * thickness,
+                y + perpY * thickness,
+              ]);
+              perpendicularPoints.push([
+                x - perpX * thickness,
+                y - perpY * thickness,
+              ]);
             }
           }
 
           // Handle the last point
-          const lastPoint = polyline[polyline.length - 1];
-          const lastPrevPoint = polyline[polyline.length - 2];
-          const lastSegDx = lastPoint[0] - lastPrevPoint[0];
-          const lastSegDy = lastPoint[1] - lastPrevPoint[1];
+          const [lastX, lastY] = polyline[polyline.length - 1];
+          const [lastPrevX, lastPrevY] = polyline[polyline.length - 2];
+          const lastSegDx = lastX - lastPrevX;
+          const lastSegDy = lastY - lastPrevY;
           const lastLength = Math.sqrt(
             lastSegDx * lastSegDx + lastSegDy * lastSegDy
           );
           const lastPerpX = -lastSegDy / lastLength;
           const lastPerpY = lastSegDx / lastLength;
-          perpendicularPoints.push({
-            x: lastPoint[0] + lastPerpX * thickness,
-            y: lastPoint[1] + lastPerpY * thickness,
-          });
-          perpendicularPoints.push({
-            x: lastPoint[0] - lastPerpX * thickness,
-            y: lastPoint[1] - lastPerpY * thickness,
-          });
+          perpendicularPoints.push([
+            lastX + lastPerpX * thickness,
+            lastY + lastPerpY * thickness,
+          ]);
+          perpendicularPoints.push([
+            lastX - lastPerpX * thickness,
+            lastY - lastPerpY * thickness,
+          ]);
         }
 
         // Second pass: create the zigzag path by connecting points
         if (perpendicularPoints.length > 0) {
-          // Start with the first point
-          pathData.push({
-            x: perpendicularPoints[0].x,
-            y: perpendicularPoints[0].y,
-            cmd: "move",
-          });
-
-          // Connect points alternately
-          for (let i = 1; i < perpendicularPoints.length; i++) {
-            const point = perpendicularPoints[i];
-            pathData.push({
-              x: point.x,
-              y: point.y,
-              cmd: "line",
-            });
+          // If we already have data for this ID, append to it
+          if (pathsByID.has(child.id)) {
+            const existingPolylines = pathsByID.get(child.id);
+            pathsByID.set(child.id, [
+              ...existingPolylines,
+              perpendicularPoints,
+            ]);
+          } else {
+            pathsByID.set(child.id, [perpendicularPoints]);
           }
-        }
-
-        // If we already have data for this ID, append to it
-        if (pathsByID.has(path.id)) {
-          const existingData = pathsByID.get(path.id);
-          // Add a move command to start the new segment
-          pathData[0].cmd = "move";
-          pathsByID.set(path.id, [...existingData, ...pathData]);
-        } else {
-          pathsByID.set(path.id, pathData);
         }
       }
     }
 
     // Convert the map back to an array of paths
-    return Array.from(pathsByID.entries()).map(([id, data]) => ({
-      type: "path",
+    return Array.from(pathsByID.entries()).map(([id, polylines]) => ({
       id,
-      data,
+      polylines,
       attributes: {},
     }));
   },

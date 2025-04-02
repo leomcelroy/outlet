@@ -1,5 +1,5 @@
 import { STATE } from "../index.js";
-import { evaluateAllLayers } from "../evaluateAllLayers.js";
+import { evaluateAllLayers } from "../utils/evaluateAllLayers.js";
 
 export function moveLayer(action) {
   const layers = STATE.layers;

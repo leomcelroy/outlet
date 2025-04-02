@@ -1,132 +1,85 @@
-import { getPathPoints } from "./getPathPoints.js";
+import { STATE } from "../index.js";
+import { evaluateAllLayers } from "./evaluateAllLayers";
 
-export function deleteGeometry(state) {
+export function deleteGeometry() {
   const toRemove = new Set();
 
   // Add selected geometry to removal set
-  state.selectedGeometry.forEach((id) => {
+  STATE.selectedGeometry.forEach((id) => {
     toRemove.add(id);
   });
 
-  // Find all selected points
-  const selectedPoints = new Set();
-  state.geometries.forEach((g) => {
-    if (g.type === "point" && state.selectedGeometry.has(g.id)) {
-      selectedPoints.add(g.id);
+  // Find and add edges that reference the deleted geometry
+  STATE.geometries.forEach((geo) => {
+    if (geo.type === "edge" && (toRemove.has(geo.p1) || toRemove.has(geo.p2))) {
+      toRemove.add(geo.id);
     }
   });
 
-  // Add geometry that references selected points to removal set
-  state.geometries.forEach((g) => {
-    if (g.type === "line") {
-      if (
-        selectedPoints.has(g.p1) ||
-        selectedPoints.has(g.p2) ||
-        toRemove.has(g.p1) ||
-        toRemove.has(g.p2)
-      ) {
-        toRemove.add(g.id);
-      }
-    } else if (g.type === "path") {
-      // Filter out commands that reference selected points
-      const pathPoints = getPathPoints(g);
-      const hasSelectedPoints = Array.from(pathPoints).some(
-        (pointId) => selectedPoints.has(pointId) || toRemove.has(pointId)
-      );
+  // Remove all selected geometry and their referenced edges
+  STATE.geometries = STATE.geometries.filter((geo) => !toRemove.has(geo.id));
 
-      if (hasSelectedPoints) {
-        // Filter out commands that reference selected points
-        const validCommands = g.data.filter((cmd) => {
-          return !(
-            (cmd.point && selectedPoints.has(cmd.point)) ||
-            (cmd.control1 && selectedPoints.has(cmd.control1)) ||
-            (cmd.control2 && selectedPoints.has(cmd.control2))
-          );
-        });
+  // Remove edges that reference non-existent points
+  const existingPointIds = new Set(
+    STATE.geometries.filter((geo) => geo.type === "point").map((geo) => geo.id)
+  );
+  STATE.geometries = STATE.geometries.filter((geo) => {
+    if (geo.type !== "edge") return true;
+    return (
+      existingPointIds.has(geo.p1) &&
+      existingPointIds.has(geo.p2) &&
+      (!geo.c1 || existingPointIds.has(geo.c1)) &&
+      (!geo.c2 || existingPointIds.has(geo.c2))
+    );
+  });
 
-        // If we have valid commands, update the path data
-        if (validCommands.length > 0) {
-          // Make sure the first command is a 'move' command
-          if (validCommands[0].cmd !== "move") {
-            validCommands[0] = {
-              point: validCommands[0].point,
-              cmd: "move",
-            };
-          }
+  // Find orphaned points (points with no edges)
+  const remainingPoints = STATE.geometries.filter(
+    (geo) => geo.type === "point"
+  );
+  const remainingEdges = STATE.geometries.filter((geo) => geo.type === "edge");
 
-          // Filter out consecutive close commands
-          const filteredCommands = validCommands.filter((cmd, index, array) => {
-            if (cmd.cmd !== "close") return true;
-            // Keep the close command if the previous command isn't also a close
-            return index === 0 || array[index - 1].cmd !== "close";
-          });
+  // Create a set of points that have edges
+  const pointsWithEdges = new Set();
+  remainingEdges.forEach((edge) => {
+    pointsWithEdges.add(edge.p1);
+    pointsWithEdges.add(edge.p2);
+    if (edge.c1) pointsWithEdges.add(edge.c1);
+    if (edge.c2) pointsWithEdges.add(edge.c2);
+  });
 
-          // Check if path has any line commands (not just move/close)
-          const hasLineCommands = filteredCommands.some(
-            (cmd) => cmd.cmd !== "move" && cmd.cmd !== "close"
-          );
-
-          if (hasLineCommands) {
-            g.data = filteredCommands;
-          } else {
-            toRemove.add(g.id);
-          }
-        } else {
-          toRemove.add(g.id);
-        }
-      }
+  // Add orphaned points to removal set
+  remainingPoints.forEach((point) => {
+    if (!pointsWithEdges.has(point.id)) {
+      toRemove.add(point.id);
     }
   });
 
-  // Find points not referenced by any remaining geometry
-  const usedPoints = new Set();
-  state.geometries.forEach((g) => {
-    if (toRemove.has(g.id)) return;
-
-    if (g.type === "line") {
-      usedPoints.add(g.p1);
-      usedPoints.add(g.p2);
-    } else if (g.type === "path") {
-      // Add all points used in the path commands
-      g.data.forEach((cmd) => {
-        if (cmd.point) usedPoints.add(cmd.point);
-        if (cmd.control1) usedPoints.add(cmd.control1);
-        if (cmd.control2) usedPoints.add(cmd.control2);
-      });
-    }
-  });
-
-  // Add unused points to removal set
-  state.geometries.forEach((g) => {
-    if (g.type === "point" && !usedPoints.has(g.id)) {
-      toRemove.add(g.id);
-    }
-  });
-
-  // Remove all marked geometry
-  state.geometries = state.geometries.filter((g) => !toRemove.has(g.id));
-
-  // If currentPath is being removed, clear it
-  if (state.currentPath && toRemove.has(state.currentPath.id)) {
-    state.currentPath = null;
-    state.currentPoint = null;
-  }
-
-  // If editingPath is being removed, clear it
-  if (state.editingPath && toRemove.has(state.editingPath)) {
-    state.editingPath = null;
-    state.selectedGeometry = new Set();
-  }
+  // Remove orphaned points
+  STATE.geometries = STATE.geometries.filter((geo) => !toRemove.has(geo.id));
 
   // Clean up unused parameters
   const usedParams = new Set();
-  state.geometries.forEach((g) => {
-    if (g.type !== "point") return;
-    usedParams.add(g.x);
-    usedParams.add(g.y);
+  STATE.geometries.forEach((geo) => {
+    if (geo.type === "point") {
+      usedParams.add(geo.x);
+      usedParams.add(geo.y);
+    } else if (geo.type === "edge") {
+      if (geo.c1) usedParams.add(geo.c1);
+      if (geo.c2) usedParams.add(geo.c2);
+    }
   });
 
-  for (const param in state.params) {
-    if (!usedParams.has(param)) delete state.params[param];
-  }
+  // Remove unused parameters
+  Object.keys(STATE.params).forEach((paramId) => {
+    if (!usedParams.has(paramId)) {
+      delete STATE.params[paramId];
+    }
+  });
+
+  // Reset drawing state
+  STATE.currentPoint = null;
+  STATE.edgeStart = null;
+
+  evaluateAllLayers();
 }

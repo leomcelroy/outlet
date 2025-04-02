@@ -42,9 +42,9 @@ export const distribute = {
       ],
     };
   },
-  process(controls, children) {
+  process(controls, inputGeometry) {
     const { direction, mode, value } = controls;
-    const paths = children.flat();
+    const paths = inputGeometry;
 
     // Calculate bounds of all paths
     let minX = Infinity,
@@ -52,16 +52,14 @@ export const distribute = {
     let minY = Infinity,
       maxY = -Infinity;
 
-    paths.forEach((path) => {
-      path.data.forEach((cmd) => {
-        if (cmd.x !== undefined) {
-          minX = Math.min(minX, cmd.x);
-          maxX = Math.max(maxX, cmd.x);
-        }
-        if (cmd.y !== undefined) {
-          minY = Math.min(minY, cmd.y);
-          maxY = Math.max(maxY, cmd.y);
-        }
+    paths.forEach((child) => {
+      child.polylines.forEach((polyline) => {
+        polyline.forEach(([x, y]) => {
+          minX = Math.min(minX, x);
+          maxX = Math.max(maxX, x);
+          minY = Math.min(minY, y);
+          maxY = Math.max(maxY, y);
+        });
       });
     });
 
@@ -72,15 +70,13 @@ export const distribute = {
       let pathMinY = Infinity,
         pathMaxY = -Infinity;
 
-      path.data.forEach((cmd) => {
-        if (cmd.x !== undefined) {
-          pathMinX = Math.min(pathMinX, cmd.x);
-          pathMaxX = Math.max(pathMaxX, cmd.x);
-        }
-        if (cmd.y !== undefined) {
-          pathMinY = Math.min(pathMinY, cmd.y);
-          pathMaxY = Math.max(pathMaxY, cmd.y);
-        }
+      path.polylines.forEach((polyline) => {
+        polyline.forEach(([x, y]) => {
+          pathMinX = Math.min(pathMinX, x);
+          pathMaxX = Math.max(pathMaxX, x);
+          pathMinY = Math.min(pathMinY, y);
+          pathMaxY = Math.max(pathMaxY, y);
+        });
       });
 
       return {
@@ -153,12 +149,10 @@ export const distribute = {
       }
 
       return {
-        ...path,
-        data: path.data.map((cmd) => ({
-          ...cmd,
-          ...(cmd.x !== undefined ? { x: cmd.x + offsetX } : {}),
-          ...(cmd.y !== undefined ? { y: cmd.y + offsetY } : {}),
-        })),
+        polylines: path.polylines.map((polyline) =>
+          polyline.map(([x, y]) => [x + offsetX, y + offsetY])
+        ),
+        attributes: path.attributes,
       };
     });
   },

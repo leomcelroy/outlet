@@ -1,21 +1,19 @@
 import { render } from "lit-html";
 import { addPanZoom } from "./events/addPanZoom.js";
-import { addSketching } from "./events/addSketching.js";
+import { addEdgeDrawing } from "./events/addEdgeDrawing.js";
 import { addPtDragging } from "./events/addPtDragging.js";
-import { addLineSelection } from "./events/addLineSelection.js";
+import { addEdgeSelection } from "./events/addEdgeSelection.js";
 import { addSelectionBox } from "./events/addSelectionBox.js";
 import { addCaching } from "./events/addCaching.js";
 import { addDropUpload } from "./events/addDropUpload.js";
 import { addLayerDrag } from "./events/addLayerDrag.js";
 import { addPluginDrag } from "./events/addPluginDrag.js";
-import { addPathDrag } from "./events/addPathDrag.js";
-import { addPathDrawing } from "./events/addPathDrawing.js";
 import { addHotKeys } from "./events/addHotKeys.js";
+import { addAdaptiveGrid } from "./events/addAdaptiveGrid.js";
 import { moveLayer } from "./actions/moveLayer.js";
-import { movePath } from "./actions/movePath.js";
 import { duplicateLayer } from "./actions/duplicateLayer.js";
 import { view } from "./view/view.js";
-import { evaluateAllLayers } from "./evaluateAllLayers.js";
+import { evaluateAllLayers } from "./utils/evaluateAllLayers.js";
 import { pluginSearch } from "./modals/pluginSearch.js";
 import { pluginControlModal } from "./modals/pluginControlModal.js";
 import { fill } from "./plugins/fill.js";
@@ -31,8 +29,6 @@ import { rotate } from "./plugins/rotate.js";
 import { translate } from "./plugins/translate.js";
 import { align } from "./plugins/align.js";
 import { distribute } from "./plugins/distribute.js";
-import { filterSingleCommandPaths } from "./utils/filterSingleCommandPaths.js";
-import { createRandStr } from "./utils/createRandStr.js";
 
 export const STATE = {
   tool: "SELECT",
@@ -50,14 +46,13 @@ export const STATE = {
       inputGeometry: [],
     },
   ],
-  currentPoint: null,
-  lineStart: null,
   selectBox: null,
   activeLayer: "DEFAULT_LAYER",
   openPluginModal: null,
   gridSize: 10,
   grid: true,
   adaptiveGrid: false,
+  showBaseGeometry: true,
   panZoomMethods: null,
   plugins: [
     fill,
@@ -74,8 +69,10 @@ export const STATE = {
     rasterPath,
     exportDST,
   ],
-  currentPath: null,
-  editingPath: null,
+
+  currentPoint: null,
+  edgeStart: null,
+
   dispatch(args) {
     const { type } = args;
 
@@ -200,13 +197,7 @@ export const STATE = {
         break;
       }
       case "MOVE_LAYER": {
-        const { sourceId, targetId, position } = args;
         moveLayer(args);
-        break;
-      }
-      case "MOVE_PATH_TO_LAYER": {
-        const { pathId, targetLayerId } = args;
-        movePath(args);
         break;
       }
       case "MOVE_PLUGIN": {
@@ -245,11 +236,11 @@ export const STATE = {
         break;
       }
       case "CLEAR": {
-        STATE.editingPath = null;
         STATE.selectedGeometry = new Set();
-        STATE.currentPath = null;
+
         STATE.currentPoint = null;
-        STATE.lineStart = null;
+        STATE.edgeStart = null;
+
         STATE.geometries = [];
         STATE.params = {};
         STATE.layers = [
@@ -258,7 +249,7 @@ export const STATE = {
             name: "Default Layer",
             parent: null,
             children: [],
-            plugins: [stroke.init({ color: "black" })],
+            plugins: [],
             outputGeometry: [],
             inputGeometry: [],
           },
@@ -305,8 +296,9 @@ export const STATE = {
         }
 
         STATE.dispatch({ type: "OPEN_PLUGIN_MODAL", pluginId: null });
-        STATE.currentPath = null;
-        STATE.editingPath = null;
+
+        STATE.currentPoint = null;
+        STATE.edgeStart = null;
 
         evaluateAllLayers();
         break;
@@ -318,7 +310,6 @@ export const STATE = {
       case "SET_TOOL": {
         const { tool } = args;
         STATE.tool = tool;
-        filterSingleCommandPaths(STATE);
         break;
       }
       default:
@@ -359,111 +350,31 @@ export function init() {
   const panZoomMethods = addPanZoom(sketchBoard);
   state.panZoomMethods = panZoomMethods;
 
-  addSketching(sketchBoard, state);
+  addEdgeDrawing(sketchBoard, state);
   addPtDragging(sketchBoard, state);
-  addLineSelection(sketchBoard, state);
-  addPathDrawing(sketchBoard, state);
+  addEdgeSelection(sketchBoard, state);
+  addAdaptiveGrid(sketchBoard, state);
 
   addSelectionBox(sketchBoard, state, ({ contains, selectBox }) => {
-    // Get the current editing path and its points
-    const editingPath = state.geometries.find(
-      (g) => g.id === state.editingPath
-    );
-    const editingPathPoints = new Set();
-
-    if (editingPath) {
-      editingPath.data.forEach((cmd) => {
-        if (cmd.point) {
-          editingPathPoints.add(cmd.point);
-        }
-        if (cmd.control1) {
-          editingPathPoints.add(cmd.control1);
-        }
-        if (cmd.control2) {
-          editingPathPoints.add(cmd.control2);
-        }
-      });
+    // Clear previous selection if not holding shift
+    if (!state.isShiftKey) {
+      state.selectedGeometry = new Set();
     }
 
-    state.geometries.forEach((g) => {
-      if (state.editingPath) {
-        // When editing a path, only select points
-        if (g.type === "point" && editingPathPoints.has(g.id)) {
-          const x = state.params[g.x];
-          const y = state.params[g.y];
-
-          if (!contains(x, y)) return;
-
-          state.selectedGeometry.add(g.id);
-        }
-      } else {
-        // When not editing a path, select all geometry types
-        if (g.type === "point") {
-          const x = state.params[g.x];
-          const y = state.params[g.y];
-          if (contains(x, y)) {
-            state.selectedGeometry.add(g.id);
-          }
-        } else if (g.type === "line") {
-          const p1 = state.geometries.find((p) => p.id === g.p1);
-          const p2 = state.geometries.find((p) => p.id === g.p2);
-          if (p1 && p2) {
-            const x1 = state.params[p1.x];
-            const y1 = state.params[p1.y];
-            const x2 = state.params[p2.x];
-            const y2 = state.params[p2.y];
-
-            // Check if either endpoint is in the selection box
-            if (contains(x1, y1) || contains(x2, y2)) {
-              state.selectedGeometry.add(g.id);
-            }
-          }
-        } else if (g.type === "path") {
-          // For paths, check if any point in the path is in the selection box
-          const hasPointInBox = g.data.some((cmd) => {
-            if (!cmd.point) return false;
-            const point = state.geometries.find((p) => p.id === cmd.point);
-            if (!point) return false;
-            const x = state.params[point.x];
-            const y = state.params[point.y];
-            return contains(x, y);
-          });
-
-          if (hasPointInBox) {
-            state.selectedGeometry.add(g.id);
-          }
+    // Select points that are inside the box and on the active layer
+    state.geometries.forEach((geo) => {
+      if (geo.type === "point" && geo.layer === state.activeLayer) {
+        const x = state.params[geo.x];
+        const y = state.params[geo.y];
+        if (contains(x, y)) {
+          state.selectedGeometry.add(geo.id);
         }
       }
     });
   });
 
-  sketchBoard.addEventListener("wheel", () => {
-    function getBaseLog(x, y) {
-      return Math.log(y) / Math.log(x);
-    }
-
-    if (!state.panZoomMethods) return;
-
-    const corners = state.panZoomMethods.corners();
-
-    const xLimits = [corners.lt[0], corners.rt[0]];
-    const xRange = Math.abs(xLimits[1] - xLimits[0]);
-    const yLimits = [corners.lb[1], corners.lt[1]];
-    const yRange = Math.abs(yLimits[1] - yLimits[0]);
-
-    // Calculate a reasonable grid size based on the current zoom level
-    const order = Math.round(getBaseLog(10, Math.max(xRange, yRange)));
-    // Use powers of 10 for more intuitive scaling (1, 10, 100, etc.)
-    // Divide by 10 to get more reasonable intermediate values
-    const stepSize = state.adaptiveGrid
-      ? Math.max(1, 10 ** order / 10)
-      : state.gridSize;
-    state.gridSize = stepSize;
-  });
-
   addLayerDrag(state);
   addPluginDrag(state);
-  addPathDrag(state);
 
   addDropUpload((file) => {
     const newState = JSON.parse(file);

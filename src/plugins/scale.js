@@ -14,9 +14,17 @@ export const scale = {
       enabled: true,
       controls: [
         {
-          id: "scale",
+          id: "scaleX",
           type: "number",
-          value: options.scale || 1,
+          value: options.scaleX || 1,
+          min: 0.1,
+          max: 10,
+          step: 0.1,
+        },
+        {
+          id: "scaleY",
+          type: "number",
+          value: options.scaleY || 1,
           min: 0.1,
           max: 10,
           step: 0.1,
@@ -44,8 +52,8 @@ export const scale = {
       ],
     };
   },
-  process(controls, children) {
-    const { scale, originX, originY } = controls;
+  process(controls, inputGeometry) {
+    const { scaleX, scaleY, originX, originY } = controls;
 
     // Calculate bounds of all paths
     let minX = Infinity,
@@ -53,16 +61,14 @@ export const scale = {
     let minY = Infinity,
       maxY = -Infinity;
 
-    children.flat().forEach((path) => {
-      path.data.forEach((cmd) => {
-        if (cmd.x !== undefined) {
-          minX = Math.min(minX, cmd.x);
-          maxX = Math.max(maxX, cmd.x);
-        }
-        if (cmd.y !== undefined) {
-          minY = Math.min(minY, cmd.y);
-          maxY = Math.max(maxY, cmd.y);
-        }
+    inputGeometry.forEach((child) => {
+      child.polylines.forEach((polyline) => {
+        polyline.forEach(([x, y]) => {
+          minX = Math.min(minX, x);
+          maxX = Math.max(maxX, x);
+          minY = Math.min(minY, y);
+          maxY = Math.max(maxY, y);
+        });
       });
     });
 
@@ -95,17 +101,14 @@ export const scale = {
     }
 
     // Process paths and scale their data values
-    return children.flat().map((path) => ({
-      ...path,
-      data: path.data.map((cmd) => ({
-        ...cmd,
-        ...(cmd.x !== undefined
-          ? { x: originXValue + (cmd.x - originXValue) * scale }
-          : {}),
-        ...(cmd.y !== undefined
-          ? { y: originYValue + (cmd.y - originYValue) * scale }
-          : {}),
-      })),
+    return inputGeometry.map((child) => ({
+      polylines: child.polylines.map((polyline) =>
+        polyline.map(([x, y]) => [
+          originXValue + (x - originXValue) * scaleX,
+          originYValue + (y - originYValue) * scaleY,
+        ])
+      ),
+      attributes: child.attributes,
     }));
   },
 };

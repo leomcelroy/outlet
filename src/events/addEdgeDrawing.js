@@ -1,17 +1,17 @@
 import { createListener } from "../utils/createListener.js";
 import { createRandStr } from "../utils/createRandStr.js";
-import { evaluateAllLayers } from "../evaluateAllLayers.js";
+import { evaluateAllLayers } from "../utils/evaluateAllLayers.js";
 
-export function addSketching(el, state) {
+export function addEdgeDrawing(el, state) {
   const listener = createListener(el);
 
   let currentPoint = null;
-  let lineStart = null;
+  let edgeStart = null;
 
   function reset() {
-    lineStart = null;
+    edgeStart = null;
     state.currentPoint = null;
-    state.lineStart = null;
+    state.edgeStart = null;
   }
 
   listener("mousedown", "", (e) => {
@@ -20,6 +20,10 @@ export function addSketching(el, state) {
       return;
     }
     if (currentPoint === null) return;
+
+    const pt = getPointWithSuggestions(e);
+    currentPoint = pt;
+    state.currentPoint = pt;
 
     const { x, y, overlap } = currentPoint;
 
@@ -30,11 +34,12 @@ export function addSketching(el, state) {
       pointId = overlap;
     }
 
-    if (lineStart === null) {
-      lineStart = pointId;
-      state.lineStart = lineStart;
+    if (edgeStart === null) {
+      edgeStart = pointId;
+      state.edgeStart = edgeStart;
+    } else if (edgeStart === pointId) {
     } else {
-      addLine(lineStart, pointId);
+      addEdge(edgeStart, pointId);
       reset();
       evaluateAllLayers();
     }
@@ -75,18 +80,20 @@ export function addSketching(el, state) {
     return pId;
   }
 
-  function addLine(startId, endId) {
-    const lineId = createRandStr(4);
-    const line = {
-      id: lineId,
-      type: "line",
+  function addEdge(startId, endId) {
+    const edgeId = createRandStr(4);
+    const edge = {
+      id: edgeId,
+      type: "edge",
       p1: startId,
+      c1: null,
       p2: endId,
+      c2: null,
       layer: state.activeLayer,
     };
 
-    state.geometries.push(line);
-    return lineId;
+    state.geometries.push(edge);
+    return edgeId;
   }
 
   function getPoint(e) {
@@ -100,6 +107,13 @@ export function addSketching(el, state) {
   function getPointWithSuggestions(e) {
     let [x, y] = getPoint(e);
 
+    // If grid is enabled and we're not near a point, snap to grid
+    if (state.grid) {
+      const stepSize = state.gridSize;
+      x = Math.round(x / stepSize) * stepSize;
+      y = Math.round(y / stepSize) * stepSize;
+    }
+
     const points = state.geometries
       .filter((geo) => geo.type === "point")
       .map(({ x, y, id }) => ({
@@ -111,19 +125,15 @@ export function addSketching(el, state) {
     const closestPoint = findClosestPoint(points, [x, y]);
 
     // If we're close to a point, prioritize snapping to it
-    if (closestPoint && closestPoint.distance < 5) {
+    if (
+      closestPoint &&
+      closestPoint.distance < 5 / (state.panZoomMethods?.scale() || 1)
+    ) {
       return {
         x,
         y,
         overlap: closestPoint.id,
       };
-    }
-
-    // If grid is enabled and we're not near a point, snap to grid
-    if (state.grid) {
-      const stepSize = state.gridSize;
-      x = Math.round(x / stepSize) * stepSize;
-      y = Math.round(y / stepSize) * stepSize;
     }
 
     return {

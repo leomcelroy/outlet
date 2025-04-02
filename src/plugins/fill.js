@@ -21,11 +21,11 @@ export const fill = {
       ],
     };
   },
-  process(controls, children) {
+  process(controls, inputGeometry) {
     const { color } = controls;
     // Only process paths, apply fill to path attributes
-    return children.flat().map((path) => ({
-      ...path,
+    return inputGeometry.map((path) => ({
+      polylines: path.polylines,
       attributes: {
         ...path.attributes,
         fill: color,

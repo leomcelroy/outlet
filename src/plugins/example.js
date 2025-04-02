@@ -49,11 +49,11 @@ export const example = {
       ],
     };
   },
-  process(controls, children) {
+  process(controls, inputGeometry) {
     const { color } = controls;
     // Only process paths, apply stroke to path attributes
-    return children.flat().map((path) => ({
-      ...path,
+    return inputGeometry.map((path) => ({
+      polylines: path.polylines,
       attributes: {
         ...path.attributes,
         stroke: color,

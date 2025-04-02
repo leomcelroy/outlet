@@ -21,20 +21,17 @@ export const testDup = {
       ],
     };
   },
-  process(controls, children) {
+  process(controls, inputGeometry) {
     const { offset } = controls;
-    const paths = children.flat();
 
     // Create duplicates of paths with offset
     return [
-      ...paths,
-      ...paths.map((path) => ({
-        ...path,
-        data: path.data.map((cmd) => ({
-          ...cmd,
-          ...(cmd.x !== undefined ? { x: cmd.x + offset } : {}),
-          ...(cmd.y !== undefined ? { y: cmd.y + offset } : {}),
-        })),
+      ...inputGeometry,
+      ...inputGeometry.map((path) => ({
+        polylines: path.polylines.map((polyline) =>
+          polyline.map(([x, y]) => [x + offset, y + offset])
+        ),
+        attributes: path.attributes,
       })),
     ];
   },

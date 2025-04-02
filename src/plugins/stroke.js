@@ -21,14 +21,14 @@ export const stroke = {
       ],
     };
   },
-  process(controls, children) {
-    const { color } = controls;
-    // Only process paths, apply stroke to path attributes
-    return children.flat().map((path) => ({
-      ...path,
+  process(controls, inputGeometry) {
+    const { color, width } = controls;
+    return inputGeometry.map((child) => ({
+      polylines: child.polylines,
       attributes: {
-        ...path.attributes,
+        ...child.attributes,
         stroke: color,
+        strokeWidth: width,
       },
     }));
   },

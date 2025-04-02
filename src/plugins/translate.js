@@ -54,7 +54,7 @@ export const translate = {
       ],
     };
   },
-  process(controls, children) {
+  process(controls, inputGeometry) {
     const { x, y, originX, originY } = controls;
 
     // Calculate bounds of all paths
@@ -63,16 +63,14 @@ export const translate = {
     let minY = Infinity,
       maxY = -Infinity;
 
-    children.flat().forEach((path) => {
-      path.data.forEach((cmd) => {
-        if (cmd.x !== undefined) {
-          minX = Math.min(minX, cmd.x);
-          maxX = Math.max(maxX, cmd.x);
-        }
-        if (cmd.y !== undefined) {
-          minY = Math.min(minY, cmd.y);
-          maxY = Math.max(maxY, cmd.y);
-        }
+    inputGeometry.forEach((path) => {
+      path.polylines.forEach((polyline) => {
+        polyline.forEach(([x, y]) => {
+          minX = Math.min(minX, x);
+          maxX = Math.max(maxX, x);
+          minY = Math.min(minY, y);
+          maxY = Math.max(maxY, y);
+        });
       });
     });
 
@@ -111,13 +109,14 @@ export const translate = {
     }
 
     // Process paths and translate their data values
-    return children.flat().map((path) => ({
-      ...path,
-      data: path.data.map((cmd) => ({
-        ...cmd,
-        ...(cmd.x !== undefined ? { x: cmd.x - originXValue + x } : {}),
-        ...(cmd.y !== undefined ? { y: cmd.y - originYValue + y } : {}),
-      })),
+    return inputGeometry.map((path) => ({
+      polylines: path.polylines.map((polyline) =>
+        polyline.map(([ox, oy]) => [
+          ox - originXValue + x,
+          oy - originYValue + y,
+        ])
+      ),
+      attributes: path.attributes,
     }));
   },
 };

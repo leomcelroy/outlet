@@ -1,6 +1,6 @@
 import { patchState } from "../index.js";
 import { createListener } from "../utils/createListener.js";
-import { evaluateAllLayers } from "../evaluateAllLayers.js";
+import { evaluateAllLayers } from "../utils/evaluateAllLayers.js";
 
 export function addPtDragging(el, state) {
   function getPoint(e) {

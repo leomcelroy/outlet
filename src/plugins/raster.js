@@ -1,6 +1,5 @@
 import { createRandStr } from "../utils/createRandStr.js";
-import { convertPathToPolylines } from "../utils/convertPathToPolylines.js";
-import { PolygonMask } from "../utils/PolygonMask.js";
+import { PolygonMask } from "../utils/masks/PolygonMask.js";
 
 const type = "raster";
 const name = "Raster";
@@ -30,63 +29,54 @@ export const raster = {
       ],
     };
   },
-  process(controls, children) {
+  process(controls, inputGeometry) {
     const { density, angle } = controls;
 
     if (density < 1) {
-      return children.flat();
+      return inputGeometry;
     }
 
     // Create a map to store paths by ID
     const pathsByID = new Map();
 
-    for (const path of children.flat()) {
-      const polylines = convertPathToPolylines(path.data);
-
-      for (const pl of polylines) {
-        if (isPolygonClosed(pl)) {
+    for (const child of inputGeometry) {
+      for (const polyline of child.polylines) {
+        if (isPolygonClosed(polyline)) {
           // Calculate center point for rotation
-          const center = calculateCenter(pl);
+          const center = calculateCenter(polyline);
 
           // Rotate the polygon by -angle (to align with horizontal scan lines)
-          const rotatedPolygon = pl.map((point) =>
+          const rotatedPolygon = polyline.map((point) =>
             rotatePoint(point, center, -angle)
           );
 
           const rasterized = rasterizePolygonZigZag(rotatedPolygon, density);
           const pathSegments = createPathSegments(rasterized, density * 2);
 
-          // Convert each segment to path data and rotate back
-          for (const segment of pathSegments) {
-            const pathData = segment.map(([x, y], i) => {
+          // Convert each segment to polylines and rotate back
+          const polylines = pathSegments.map((segment) =>
+            segment.map(([x, y]) => {
               // Rotate the point back by the original angle
               const [rotatedX, rotatedY] = rotatePoint([x, y], center, angle);
-              return {
-                x: rotatedX,
-                y: rotatedY,
-                cmd: i === 0 ? "move" : "line",
-              };
-            });
+              return [rotatedX, rotatedY];
+            })
+          );
 
-            // If we already have data for this ID, append to it
-            if (pathsByID.has(path.id)) {
-              const existingData = pathsByID.get(path.id);
-              // Add a move command to start the new segment
-              pathData[0].cmd = "move";
-              pathsByID.set(path.id, [...existingData, ...pathData]);
-            } else {
-              pathsByID.set(path.id, pathData);
-            }
+          // If we already have data for this ID, append to it
+          if (pathsByID.has(child.id)) {
+            const existingPolylines = pathsByID.get(child.id);
+            pathsByID.set(child.id, [...existingPolylines, ...polylines]);
+          } else {
+            pathsByID.set(child.id, polylines);
           }
         }
       }
     }
 
     // Convert the map back to an array of paths
-    return Array.from(pathsByID.entries()).map(([id, data]) => ({
-      type: "path",
-      id,
-      data,
+    return Array.from(pathsByID.entries()).map(([id, polylines]) => ({
+      polylines,
+      attributes: {},
     }));
   },
 };

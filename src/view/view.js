@@ -3,11 +3,11 @@ import { drawSelectBox } from "./drawSelectBox.js";
 import { drawTopBar } from "./drawTopBar.js";
 import { drawToolbar } from "./drawToolbar.js";
 import { drawLayers } from "./drawLayers.js";
-import { drawTempLine } from "./drawTempLine.js";
-import { drawTempPath } from "./drawTempPath.js";
 import { drawLayerTree } from "./drawLayerTree.js";
 import { drawPlugins } from "./drawPlugins.js";
 import { drawGrid } from "./drawGrid.js";
+
+import { drawTempEdge } from "./drawTempEdge.js";
 
 function formatCoord(value) {
   if (value == null) return "     0.0";
@@ -54,8 +54,7 @@ export function view(state) {
               <!-- -- -->
               ${drawLayers(state)}
               <!-- -- -->
-              ${state.tool === "DRAW" ? drawTempLine(state) : ""}
-              ${state.tool === "DRAW_PATH" ? drawTempPath(state) : ""}
+              ${state.tool === "DRAW" ? drawTempEdge(state) : ""}
               <!-- -- -->
             </g>
           </svg>

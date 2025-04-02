@@ -1,12 +1,15 @@
 import { STATE } from "../index.js";
-import { evaluateAllLayers } from "../evaluateAllLayers.js";
+import { evaluateAllLayers } from "../utils/evaluateAllLayers.js";
 import { html, render } from "lit-html";
 import { pluginTriggerModal } from "./pluginTriggerModal.js";
 
 export function pluginSearch() {
+  const modalContainer = document.querySelector("[modal-controls-container]");
+  modalContainer.innerHTML = "";
+
   // Create a container div and append it to the body
   const container = document.createElement("div");
-  document.body.appendChild(container);
+  modalContainer.appendChild(container);
 
   // Function to update the view
   const update = () => {

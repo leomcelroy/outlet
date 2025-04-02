@@ -1,6 +1,6 @@
 import { STATE } from "../index.js";
 import { createRandStr } from "../utils/createRandStr.js";
-import { evaluateAllLayers } from "../evaluateAllLayers.js";
+import { evaluateAllLayers } from "../utils/evaluateAllLayers.js";
 
 function generateUniqueLayerName(baseName) {
   let name = `${baseName} (Copy)`;
