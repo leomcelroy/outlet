@@ -24,6 +24,7 @@ import { exportDST } from "./plugins/exportDST.js";
 import { demoModal } from "./plugins/customModalDemo.js";
 import { bitmap } from "./plugins/bitmap.js";
 import { raster } from "./plugins/raster.js";
+import { rasterFill } from "./plugins/rasterFill.js";
 import { scale } from "./plugins/scale.js";
 import { rasterPath } from "./plugins/rasterPath.js";
 import { rotate } from "./plugins/rotate.js";
@@ -68,7 +69,8 @@ export const STATE = {
     // testDup,
     // demoModal,
     bitmap,
-    // raster,
+    raster,
+    rasterFill,
     rasterPath,
     satinFill,
     exportDST,
@@ -273,8 +275,19 @@ export const STATE = {
       }
       case "DELETE_LAYER": {
         const { layerId } = args;
-        // Don't allow deleting the default layer
-        if (layerId === "DEFAULT_LAYER") return;
+
+        if (layerId === "DEFAULT_LAYER") {
+          // For default layer, just clear the geometry but keep the layer
+          STATE.geometries = STATE.geometries.filter(
+            (g) => g.layer !== layerId
+          );
+
+          STATE.currentPoint = null;
+          STATE.edgeStart = null;
+
+          evaluateAllLayers();
+          break;
+        }
 
         // Find the layer to delete
         const layerIndex = STATE.layers.findIndex((l) => l.id === layerId);
