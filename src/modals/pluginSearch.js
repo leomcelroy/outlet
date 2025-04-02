@@ -42,6 +42,16 @@ export function pluginSearch() {
                 STATE.searchQuery = e.target.value;
                 update(); // Re-render the template after updating the state
               }}
+              @keydown=${(e) => {
+                if (e.key === "Enter") {
+                  const firstPluginBtn = container.querySelector(
+                    "[apply-trigger-btn]"
+                  );
+                  if (firstPluginBtn) {
+                    firstPluginBtn.click();
+                  }
+                }
+              }}
             />
           </div>
           <div
@@ -55,6 +65,7 @@ export function pluginSearch() {
                 >
                   <span>${plugin.name}</span>
                   <button
+                    apply-trigger-btn
                     class="${plugin.applyOnce
                       ? "px-3 py-1 bg-orange-500 border border-orange-500 text-white rounded hover:bg-orange-600"
                       : "px-3 py-1 bg-blue-500 border border-blue-500 text-white rounded hover:bg-blue-600"}"

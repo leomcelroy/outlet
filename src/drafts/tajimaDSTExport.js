@@ -4,42 +4,68 @@ export function tajimaDSTExport({ data, designName, stitchLength }) {
 
   let expArr = [];
 
+  // Round all input data to tenths of millimeters
+  data = data.map((block) => ({
+    ...block,
+    polylines: block.polylines.map((polyline) =>
+      polyline.map(([x, y]) => [Math.round(x * 10), Math.round(y * 10)])
+    ),
+  }));
+
   // We'll accumulate: { dx, dy, type }, type can be 'jump', 'color', 'end', or undefined for normal stitch
   let moves = [];
-  let currentXmm = 0;
-  let currentYmm = 0;
+  let currentX = 0;
+  let currentY = 0;
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;
   let maxY = -Infinity;
 
   // Subdivide moves bigger than ±121 DST units
-  function pushMove(dxMm, dyMm, type) {
+  function pushMove(dx, dy, type) {
     moves.push({ dx: 0, dy: 0, type });
-    // Convert mm -> DST (multiply by 10 and round)
-    let dxDST = Math.round(dxMm * 10);
-    let dyDST = Math.round(dyMm * 10);
 
     // A single move might still exceed ±121, so break it up
     const limit = stitchLength * 10;
-    while (Math.abs(dxDST) > limit || Math.abs(dyDST) > limit) {
-      let stepX = Math.max(-limit, Math.min(limit, dxDST));
-      let stepY = Math.max(-limit, Math.min(limit, dyDST));
+
+    // Use Bresenham-like algorithm for movement
+    while (Math.abs(dx) > limit || Math.abs(dy) > limit) {
+      // Calculate the dominant axis and its step
+      const absX = Math.abs(dx);
+      const absY = Math.abs(dy);
+      const isXDominant = absX > absY;
+
+      // Calculate step size for dominant axis
+      const step = Math.min(limit, isXDominant ? absX : absY);
+      const signX = Math.sign(dx);
+      const signY = Math.sign(dy);
+
+      // Calculate the ratio for the non-dominant axis using integer math
+      const ratio = isXDominant
+        ? Math.round((absY * 100) / absX)
+        : Math.round((absX * 100) / absY);
+      const nonDominantStep = Math.round((step * ratio) / 100);
+
+      // Apply the movement
+      const stepX = isXDominant ? step * signX : nonDominantStep * signX;
+      const stepY = isXDominant ? nonDominantStep * signY : step * signY;
+
       moves.push({ dx: stepX, dy: stepY, type });
-      dxDST -= stepX;
-      dyDST -= stepY;
+      dx -= stepX;
+      dy -= stepY;
     }
-    if (dxDST !== 0 || dyDST !== 0) {
-      moves.push({ dx: dxDST, dy: dyDST, type });
+
+    if (dx !== 0 || dy !== 0) {
+      moves.push({ dx, dy, type });
     }
   }
 
   // Track actual DST bounding box for the header
-  function trackBounds(xMm, yMm) {
-    if (xMm < minX) minX = xMm;
-    if (xMm > maxX) maxX = xMm;
-    if (yMm < minY) minY = yMm;
-    if (yMm > maxY) maxY = yMm;
+  function trackBounds(x, y) {
+    if (x < minX) minX = x;
+    if (x > maxX) maxX = x;
+    if (y < minY) minY = y;
+    if (y > maxY) maxY = y;
   }
 
   // Generate moves
@@ -53,15 +79,15 @@ export function tajimaDSTExport({ data, designName, stitchLength }) {
     for (let poly of block.polylines) {
       poly.forEach(([x, y], i) => {
         if (i === 0) {
-          pushMove(x - currentXmm, y - currentYmm, "jump");
-          currentXmm = x;
-          currentYmm = y;
-          trackBounds(currentXmm, currentYmm);
+          pushMove(x - currentX, y - currentY, "jump");
+          currentX = x;
+          currentY = y;
+          trackBounds(currentX, currentY);
         } else {
-          pushMove(x - currentXmm, y - currentYmm);
-          currentXmm = x;
-          currentYmm = y;
-          trackBounds(currentXmm, currentYmm);
+          pushMove(x - currentX, y - currentY);
+          currentX = x;
+          currentY = y;
+          trackBounds(currentX, currentY);
         }
       });
     }
@@ -74,15 +100,9 @@ export function tajimaDSTExport({ data, designName, stitchLength }) {
     (m) => m.type === undefined && (m.dx !== 0 || m.dy !== 0)
   ).length;
 
-  // Convert bounding box from mm -> DST
-  let minXDST = Math.round(minX * 10);
-  let maxXDST = Math.round(maxX * 10);
-  let minYDST = Math.round(minY * 10);
-  let maxYDST = Math.round(maxY * 10);
-
-  // Current final position in DST
-  let axDST = Math.round(currentXmm * 10);
-  let ayDST = -Math.round(currentYmm * 10);
+  // Current final position
+  let ax = currentX;
+  let ay = -currentY;
 
   // Write 512-byte header
   function writeByte(b) {
@@ -103,12 +123,12 @@ export function tajimaDSTExport({ data, designName, stitchLength }) {
   // We approximate color count = number of blocks
   let colorCount = data.length;
   writeString(`CO:${padNumber(colorCount, 3)}\r`);
-  writeString(`+X:${padNumber(Math.max(0, maxXDST), 5)}\r`);
-  writeString(`-X:${padNumber(Math.max(0, -minXDST), 5)}\r`);
-  writeString(`+Y:${padNumber(Math.max(0, maxYDST), 5)}\r`);
-  writeString(`-Y:${padNumber(Math.max(0, -minYDST), 5)}\r`);
-  writeString(`AX:${axDST >= 0 ? "+" : "-"}${padNumber(Math.abs(axDST), 5)}\r`);
-  writeString(`AY:${ayDST >= 0 ? "+" : "-"}${padNumber(Math.abs(ayDST), 5)}\r`);
+  writeString(`+X:${padNumber(Math.max(0, maxX), 5)}\r`);
+  writeString(`-X:${padNumber(Math.max(0, -minX), 5)}\r`);
+  writeString(`+Y:${padNumber(Math.max(0, maxY), 5)}\r`);
+  writeString(`-Y:${padNumber(Math.max(0, -minY), 5)}\r`);
+  writeString(`AX:${ax >= 0 ? "+" : "-"}${padNumber(Math.abs(ax), 5)}\r`);
+  writeString(`AY:${ay >= 0 ? "+" : "-"}${padNumber(Math.abs(ay), 5)}\r`);
   writeString(`MX:+00000\r`);
   writeString(`MY:+00000\r`);
   writeString(`PD:******\r`);

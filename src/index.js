@@ -14,6 +14,7 @@ import { moveLayer } from "./actions/moveLayer.js";
 import { duplicateLayer } from "./actions/duplicateLayer.js";
 import { view } from "./view/view.js";
 import { evaluateAllLayers } from "./utils/evaluateAllLayers.js";
+import { clearEdgeStartIfNoConnections } from "./utils/clearEdgeStartIfNoConnections.js";
 import { pluginSearch } from "./modals/pluginSearch.js";
 import { pluginControlModal } from "./modals/pluginControlModal.js";
 import { fill } from "./plugins/fill.js";
@@ -29,6 +30,7 @@ import { rotate } from "./plugins/rotate.js";
 import { translate } from "./plugins/translate.js";
 import { align } from "./plugins/align.js";
 import { distribute } from "./plugins/distribute.js";
+import { hide } from "./plugins/hide.js";
 
 export const STATE = {
   tool: "SELECT",
@@ -68,6 +70,7 @@ export const STATE = {
     // raster,
     rasterPath,
     exportDST,
+    hide,
   ],
 
   currentPoint: null,
@@ -309,6 +312,12 @@ export const STATE = {
       }
       case "SET_TOOL": {
         const { tool } = args;
+
+        clearEdgeStartIfNoConnections(STATE);
+        STATE.currentPoint = null;
+        STATE.edgeStart = null;
+        STATE.selectedGeometry = new Set();
+
         STATE.tool = tool;
         break;
       }

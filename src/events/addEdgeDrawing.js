@@ -18,7 +18,6 @@ export function addEdgeDrawing(el, state) {
       reset();
       return;
     }
-    if (state.currentPoint === null) return;
 
     const pt = getPointWithSuggestions(e);
     state.currentPoint = pt;
