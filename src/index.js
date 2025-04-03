@@ -71,14 +71,16 @@ export const STATE = {
     // testDup,
     // demoModal,
     bitmap,
-    raster,
+    //raster,
     rasterFill,
     rasterPath,
-    satinFill,
-    exportDST,
+    // satinFill,
     hide,
     colorCode,
     scaleToRect,
+
+    // TRIGGERS
+    exportDST,
   ],
 
   currentPoint: null,
