@@ -33,6 +33,8 @@ import { align } from "./plugins/align.js";
 import { distribute } from "./plugins/distribute.js";
 import { hide } from "./plugins/hide.js";
 import { satinFill } from "./plugins/satinFill.js";
+import { colorCode } from "./plugins/colorCode.js";
+import { scaleToRect } from "./plugins/scaleToRect.js";
 
 export const STATE = {
   tool: "SELECT",
@@ -75,6 +77,8 @@ export const STATE = {
     satinFill,
     exportDST,
     hide,
+    colorCode,
+    scaleToRect,
   ],
 
   currentPoint: null,
