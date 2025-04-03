@@ -41,10 +41,10 @@ export const rasterFill = {
     };
   },
   process(controls, inputGeometry) {
-    const { density, angle, joinPaths, colorFillSections } = controls;
+    let { density, angle, joinPaths, colorFillSections } = controls;
 
-    if (density < 1) {
-      return inputGeometry;
+    if (density < 0.2) {
+      density = 0.2;
     }
 
     const center = [0, 0];
