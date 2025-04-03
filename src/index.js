@@ -34,6 +34,8 @@ import { distribute } from "./plugins/distribute.js";
 import { hide } from "./plugins/hide.js";
 import { satinFill } from "./plugins/satinFill.js";
 import { offset } from "./plugins/offset.js";
+import { exportSVG } from "./plugins/exportSVG.js";
+
 export const STATE = {
   tool: "SELECT",
   params: {},
@@ -75,6 +77,7 @@ export const STATE = {
     rasterPath,
     satinFill,
     exportDST,
+    exportSVG,
     hide,
   ],
 
