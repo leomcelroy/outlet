@@ -33,8 +33,8 @@ export function addSelectionBox(el, state, callback = null) {
       end = null;
 
       state.selectBox = {
-        start,
-        end,
+        start: [0, 0],
+        end: [0, 0],
       };
       return;
     }

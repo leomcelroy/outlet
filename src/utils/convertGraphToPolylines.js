@@ -231,7 +231,7 @@ export function convertGraphToPolylines(geometries, params) {
       if (segment.type === "point") {
         coords.push(segment.coords);
       } else if (segment.type === "curve") {
-        const steps = 10;
+        const steps = 32;
         for (let t = 0; t <= 1; t += 1 / steps) {
           const x = cubicBezier(
             t,
