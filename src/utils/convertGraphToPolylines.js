@@ -14,118 +14,51 @@ export function convertGraphToPolylines(geometries, params) {
   });
 
   const usedEdges = new Set();
-
   const polylines = [];
 
-  // Process cycles using the first available unused edge.
-  while (true) {
-    let startEdge = null;
-    for (const edge of edges) {
-      const edgeKey = [edge.p1, edge.p2].sort().join(",");
-      if (!usedEdges.has(edgeKey)) {
-        startEdge = edge;
-        break;
-      }
-    }
-    if (!startEdge) break;
+  // Helper: Returns true if the point has at least one adjacent edge that hasn't been used.
+  function hasUnusedEdge(pointId) {
+    return adjacencyList.get(pointId).some((neighbor) => {
+      const edgeKey = [pointId, neighbor].sort().join(",");
+      return !usedEdges.has(edgeKey);
+    });
+  }
 
-    const cycle = findCycle(startEdge.p1);
+  // --- First Pass: Find all cycles ---
+  for (const point of points) {
+    if (!hasUnusedEdge(point.id)) continue;
+    const cycle = findCycle(point.id);
     if (cycle && cycle.length >= 4) {
-      const polyline = convertIdsToCoords(cycle, points, params);
-      polylines.push(polyline);
       for (let i = 0; i < cycle.length - 1; i++) {
         const edgeKey = [cycle[i], cycle[i + 1]].sort().join(",");
         usedEdges.add(edgeKey);
       }
-    } else {
-      break;
+      polylines.push(convertIdsToCoords(cycle, points, params));
     }
   }
 
-  // Process chains from remaining unused edges.
-  while (true) {
-    let startEdge = null;
-    for (const edge of edges) {
-      const edgeKey = [edge.p1, edge.p2].sort().join(",");
-      if (!usedEdges.has(edgeKey)) {
-        startEdge = edge;
-        break;
+  // --- Second Pass: Find chains from points that didn't participate in a cycle ---
+  for (const point of points) {
+    if (!hasUnusedEdge(point.id)) continue;
+    const chain = findChain(point.id);
+    if (chain.length >= 2) {
+      for (let i = 0; i < chain.length - 1; i++) {
+        const edgeKey = [chain[i], chain[i + 1]].sort().join(",");
+        usedEdges.add(edgeKey);
       }
-    }
-    if (!startEdge) break;
-
-    const chain = findChain(startEdge.p1);
-    if (chain.length < 2) {
-      usedEdges.add([startEdge.p1, startEdge.p2].sort().join(","));
-      continue;
-    }
-    const polyline = convertIdsToCoords(chain, points, params);
-    polylines.push(polyline);
-    for (let i = 0; i < chain.length - 1; i++) {
-      const edgeKey = [chain[i], chain[i + 1]].sort().join(",");
-      usedEdges.add(edgeKey);
+      polylines.push(convertIdsToCoords(chain, points, params));
     }
   }
 
   return polylines;
 
-  // Greedy DFS to extend a chain as far as possible.
-  function findChain(startPoint) {
-    let current = startPoint;
-    const path = [startPoint];
-    const visited = new Set([startPoint]);
-
-    while (true) {
-      let extended = false;
-      const neighbors = adjacencyList.get(current);
-
-      // Try to extend in both directions
-      for (const next of neighbors) {
-        const edgeKey = [current, next].sort().join(",");
-        if (usedEdges.has(edgeKey)) continue;
-
-        // Check if we can extend the chain in either direction
-        if (!visited.has(next)) {
-          visited.add(next);
-          path.push(next);
-          current = next;
-          extended = true;
-          break;
-        }
-      }
-
-      if (!extended) {
-        // If we couldn't extend forward, try to extend backward
-        if (path.length > 1) {
-          const prev = path[path.length - 2];
-          const edgeKey = [prev, current].sort().join(",");
-          if (!usedEdges.has(edgeKey) && !visited.has(prev)) {
-            // We can extend backward
-            visited.add(prev);
-            path.unshift(prev);
-            current = prev;
-            extended = true;
-          }
-        }
-      }
-
-      if (!extended) break;
-    }
-
-    return path;
-  }
-
-  // DFS to find a cycle starting from a given point.
+  // DFS to find a cycle starting and ending at the same point.
   function findCycle(startPoint) {
     const dfs = (current, start, path, visited, usedInThisCycle) => {
       for (const next of adjacencyList.get(current)) {
         const edgeKey = [current, next].sort().join(",");
-        // Skip if edge was used in any cycle or in this cycle
         if (usedEdges.has(edgeKey) || usedInThisCycle.has(edgeKey)) continue;
-
-        if (next === start && path.length >= 2) {
-          return [...path, start];
-        }
+        if (next === start && path.length >= 2) return [...path, start];
         if (!visited.has(next)) {
           visited.add(next);
           path.push(next);
@@ -146,5 +79,43 @@ export function convertGraphToPolylines(geometries, params) {
       new Set([startPoint]),
       new Set()
     );
+  }
+
+  // Greedy DFS to extend a chain as far as possible.
+  function findChain(startPoint) {
+    let current = startPoint;
+    const path = [startPoint];
+    const visited = new Set([startPoint]);
+
+    while (true) {
+      let extended = false;
+      const neighbors = adjacencyList.get(current);
+      for (const next of neighbors) {
+        const edgeKey = [current, next].sort().join(",");
+        if (usedEdges.has(edgeKey)) continue;
+        if (!visited.has(next)) {
+          visited.add(next);
+          path.push(next);
+          current = next;
+          extended = true;
+          break;
+        }
+      }
+      if (!extended) {
+        // Optionally try to extend backwards if possible.
+        if (path.length > 1) {
+          const prev = path[path.length - 2];
+          const edgeKey = [prev, current].sort().join(",");
+          if (!usedEdges.has(edgeKey) && !visited.has(prev)) {
+            visited.add(prev);
+            path.unshift(prev);
+            current = prev;
+            extended = true;
+          }
+        }
+      }
+      if (!extended) break;
+    }
+    return path;
   }
 }
