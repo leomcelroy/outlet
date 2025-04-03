@@ -199,6 +199,49 @@ function satinFillPolygon(polygon) {
         region.stitches.push([startEdge.currentX, scanLine]);
         region.stitches.push([endEdge.currentX, scanLine]);
       }
+
+      // let beginCheckingRegionIndex = 0;
+      // for (let i = 0; i < activeEdgeTable.length; i += 2) {
+      //   let regionIndex = beginCheckingRegionIndex;
+      //   const startEdge = activeEdgeTable[i];
+      //   const endEdge = activeEdgeTable[i + 1];
+
+      //   while (regionIndex < stitchRegions.length) {
+      //     const region = stitchRegions[regionIndex];
+      //     if (
+      //       startEdge.v0 === region.currLeftVert &&
+      //       endEdge.v0 === region.currRightVert
+      //     ) {
+      //       // In the same region, just add stitches
+      //       region.stitches.push([startEdge.currentX, scanLine]);
+      //       region.stitches.push([endEdge.currentX, scanLine]);
+      //       beginCheckingRegionIndex = regionIndex + 1;
+      //       break;
+      //     } else if (
+      //       (endEdge.v0 === region.currRightVert) ||
+      //       (endEdge.v0 !== region.currRightVert)
+      //     ) {
+      //       // add hallway corner
+      //       region.hallway.push([
+      //         startEdge.currentX + (endEdge.currentX - startEdge.currentX) / 2,
+      //         scanLine,
+      //       ]);
+      //       region.currLeftVert = startEdge.v0;
+      //       region.currRightVert = endEdge.v0;
+
+      //       region.stitches.push([startEdge.currentX, scanLine]);
+      //       region.stitches.push([endEdge.currentX, scanLine]);
+      //       beginCheckingRegionIndex = regionIndex + 1;
+      //       break;
+      //     } else {
+      //       let check = regionIndex+1
+      //       let found = false
+      //       // look forward
+      //       while (check < stitchRegions.length) {
+
+      //       }
+      //     }
+      // }
     } else {
       console.warn("ODD NUMBER OF EDGES at scanline", scanLine);
     }
@@ -239,6 +282,5 @@ function satinFillPolygon(polygon) {
       });
     })
     .flat(2);
-  console.log(stitches);
   return stitches;
 }
