@@ -100,6 +100,10 @@ export const STATE = {
         STATE.activeLayer = layerId;
         break;
       }
+      case "EVALUATE_LAYERS": {
+        evaluateAllLayers();
+        break;
+      }
       case "TOGGLE_LAYER": {
         const { layerId } = args;
         if (!STATE.expandedLayers) {
@@ -397,11 +401,6 @@ export function init() {
   addAdaptiveGrid(sketchBoard, state);
 
   addSelectionBox(sketchBoard, state, ({ contains, selectBox }) => {
-    // Clear previous selection if not holding shift
-    if (!state.isShiftKey) {
-      state.selectedGeometry = new Set();
-    }
-
     // Select points that are inside the box and on the active layer
     state.geometries.forEach((geo) => {
       if (geo.type === "point" && geo.layer === state.activeLayer) {
