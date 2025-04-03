@@ -30,7 +30,7 @@ export const rasterPath = {
     };
   },
   process(controls, inputGeometry) {
-    const { thickness, spacing } = controls;
+    let { thickness, spacing } = controls;
 
     if (thickness < 0.2) {
       thickness = 0.2;
