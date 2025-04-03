@@ -73,6 +73,8 @@ export function addEdgeDrawing(el, state) {
     const p = {
       id: pId,
       type: "point",
+      cornerType: "straight",
+      cornerValue: 0.5,
       x: xId,
       y: yId,
       layer: state.activeLayer,
@@ -94,6 +96,16 @@ export function addEdgeDrawing(el, state) {
       c2: null,
       layer: state.activeLayer,
     };
+
+    // Check for existing edge by sorting the point IDs to create a consistent edge key
+    const edgeKey = [startId, endId].sort().join(",");
+    const existingEdge = state.geometries.find(
+      (geo) =>
+        geo.type === "edge" && [geo.p1, geo.p2].sort().join(",") === edgeKey
+    );
+    if (existingEdge) {
+      return;
+    }
 
     state.geometries.push(edge);
     return edgeId;

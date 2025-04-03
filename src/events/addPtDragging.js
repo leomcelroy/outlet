@@ -49,6 +49,22 @@ export function addPtDragging(el, state) {
     ogParams = JSON.parse(JSON.stringify(state.params));
   });
 
+  listener("dblclick", "[point]", (e) => {
+    if (state.tool !== "SELECT") return;
+
+    const id = e.target.dataset.id;
+    const point = state.geometries.find(
+      (p) => p.id === id && p.type === "point"
+    );
+    if (point) {
+      point.cornerType = point.cornerType === "straight" ? "curvy" : "straight";
+      if (point.cornerType === "curvy" && point.cornerValue === undefined) {
+        point.cornerValue = 0.5; // Default curve strength
+      }
+      evaluateAllLayers();
+    }
+  });
+
   listener("mousedown", "", (e) => {
     if (state.tool !== "SELECT") return;
 

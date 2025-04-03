@@ -1,4 +1,5 @@
 import { createRandStr } from "../utils/createRandStr.js";
+import { resamplePolylines } from "../utils/polylines/resamplePolylines.js";
 
 const type = "rasterPath";
 const name = "Raster Path";
@@ -31,18 +32,19 @@ export const rasterPath = {
   process(controls, inputGeometry) {
     const { thickness, spacing } = controls;
 
-    if (thickness < 0.5) {
-      thickness = 0.5;
+    if (thickness < 0.2) {
+      thickness = 0.2;
     }
-    if (spacing < 0.5) {
-      spacing = 0.5;
+    if (spacing < 0.2) {
+      spacing = 0.2;
     }
 
     // Create a map to store paths by ID
     const pathsByID = new Map();
 
     for (const child of inputGeometry) {
-      for (const polyline of child.polylines) {
+      const resampled = resamplePolylines(child.polylines, spacing);
+      for (const polyline of resampled) {
         // Skip empty polylines
         if (!polyline || polyline.length === 0) continue;
 

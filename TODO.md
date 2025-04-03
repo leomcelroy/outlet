@@ -1,12 +1,17 @@
 TODO
 
-- rasterize
-  - holes
-- more plugins
-  - translate
-  - align
-  - distribute
+- add images
+  - each layer has images and they are passed along like polylines
+- move execution to web worker
+- change plugin format
+- view modes
+- direct manipulation
   - rotate
+  - translate
+  - scale
+  - flip (x/y)
+- plugins
+
 - bake layer
 - flip y axis
 - undo/redo
@@ -15,12 +20,21 @@ TODO
 - bezier drawing
 - add measure sides
 - toggle layer visibility
-- make drawing mode -> edit sketch mode
-  - sketches have paths on them
-  - a sketch gets turned into an array of paths
 
 DONE
 
+- more plugins
+  - translate
+  - align
+  - distribute
+  - rotate
+  - color code
+  - scale to rect
+- make drawing mode -> edit sketch mode
+  - sketches have paths on them
+  - a sketch gets turned into an array of paths
+- rasterize
+  - holes
 - delete layers
 - reorder layers
 - add plugin search

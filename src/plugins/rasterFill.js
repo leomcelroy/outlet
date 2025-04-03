@@ -25,23 +25,32 @@ export const rasterFill = {
           label: "Angle (degrees)",
           value: 0,
         },
+        {
+          id: "joinPaths",
+          type: "boolean",
+          label: "Join Paths",
+          value: false,
+        },
+        {
+          id: "colorFillSections",
+          type: "boolean",
+          label: "Color Fill Sections",
+          value: false,
+        },
       ],
     };
   },
   process(controls, inputGeometry) {
-    const { density, angle } = controls;
+    let { density, angle, joinPaths, colorFillSections } = controls;
 
-    if (density < 1) {
-      return inputGeometry;
+    if (density < 0.2) {
+      density = 0.2;
     }
 
     const center = [0, 0];
-
-    const scanLineGroups = [];
-    const allScanLines = [];
+    const allPaths = [];
 
     for (const child of inputGeometry) {
-      // Sort polylines by length (descending) to identify outer boundary and holes
       const sortedPolylines = [...child.polylines].sort(
         (a, b) => b.length - a.length
       );
@@ -50,7 +59,6 @@ export const rasterFill = {
         const outerBoundary = sortedPolylines[0];
         const holes = sortedPolylines.slice(1).filter(isPolygonClosed);
 
-        // Rotate the polygon and holes by -angle
         const rotatedOuterBoundary = outerBoundary.map((point) =>
           rotatePoint(point, center, -angle)
         );
@@ -58,48 +66,54 @@ export const rasterFill = {
           hole.map((point) => rotatePoint(point, center, -angle))
         );
 
+        // Each scan line now gets an id so we can reference it later
         const scanLines = rasterizePolygonWithHoles(
           rotatedOuterBoundary,
           rotatedHoles,
           density
         );
 
-        // Group scan lines into connected sections
         const groupedScanLines = groupScanLines(scanLines, density);
 
-        scanLineGroups.push(...groupedScanLines);
-        allScanLines.push(...scanLines);
+        // Map scanline groups into geometry objects with polylines (array of arrays)
+        const sorted = groupedScanLines.reverse().map((group, groupIndex) => {
+          const zigzagPoints = [];
+          group.forEach((scanLine, i) => {
+            zigzagPoints.push(
+              i % 2 === 0 ? scanLine.points[0] : scanLine.points[1]
+            );
+          });
+
+          return {
+            polylines: [zigzagPoints],
+            attributes: {
+              scanlineIds: group.map((scanLine) => scanLine.id),
+              stroke: colorFillSections
+                ? `hsl(${(groupIndex * 137.5) % 360}, 70%, 50%)`
+                : "black",
+            },
+          };
+        });
+
+        // Build medial graph with nodes having { id, point }
+        const medialGraph = makeMedialLineGraph(scanLines, density);
+
+        // Create merged path using medial graph for connecting paths
+        const mergedPath = createMergedPath(sorted, medialGraph);
+
+        if (joinPaths) {
+          allPaths.push(mergedPath);
+        } else {
+          allPaths.push(
+            ...sorted
+            // medialGraph.polylines,
+            // mergedPath
+          );
+        }
       }
     }
 
-    console.log({ allScanLines });
-
-    const medialPolylines = makeMedialLineGraph(allScanLines, density);
-
-    console.log({ medialPolylines });
-
-    // Convert color groups into geometry objects with zigzag pattern
-    const sorted = scanLineGroups.reverse().map((group, groupIndex) => {
-      const zigzagPoints = [];
-      group.forEach((scanLine, i) => {
-        zigzagPoints.push(i % 2 === 0 ? scanLine[0] : scanLine[1]);
-      });
-
-      return {
-        polylines: [groupIndex !== 0 ? zigzagPoints.reverse() : zigzagPoints],
-        attributes: {
-          stroke: `hsl(${(groupIndex * 137.5) % 360}, 70%, 50%)`,
-        },
-      };
-    });
-
-    // sorted.push(medialPolylines.polylines);
-
-    // Create merged path
-    const mergedPath = createMergedPath(sorted, medialPolylines.polylines);
-    sorted.push(mergedPath);
-
-    return rotateGeometry(sorted, center, angle);
+    return rotateGeometry(allPaths, center, angle);
   },
 };
 
@@ -116,346 +130,63 @@ function rotatePolylines(polylines, center, angle) {
   );
 }
 
-function makeMedialLineGraph(scanLines, stepSize) {
-  const nodes = [];
-  const edges = [];
-  const polylines = [];
-
-  // Create nodes from medial points of each scan line
-  scanLines.forEach((scanLine) => {
-    const line = scanLine;
-    const x1 = line[0][0];
-    const y1 = line[0][1];
-    const x2 = line[line.length - 1][0];
-    const midX = (x1 + x2) / 2;
-    const midY = y1;
-    nodes.push([midX, midY]);
-  });
-
-  // For each scan line, find valid connections to lines above it
-  for (let i = 0; i < scanLines.length; i++) {
-    const currentLine = scanLines[i];
-    const currentY = currentLine[0][1];
-
-    // Get x range of current line
-    const currentXMin = Math.min(...currentLine.map((p) => p[0]));
-    const currentXMax = Math.max(...currentLine.map((p) => p[0]));
-
-    // Look for valid connections to lines above
-    for (let j = 0; j < scanLines.length; j++) {
-      if (i === j) continue;
-
-      const nextLine = scanLines[j];
-      const nextY = nextLine[0][1];
-
-      // Skip if not above current line
-      if (nextY <= currentY) continue;
-
-      // Check if y-separation is approximately equal to stepSize
-      const yDiff = nextY - currentY;
-      if (Math.abs(yDiff - stepSize) > stepSize * 0.3) continue; // 30% tolerance
-
-      // Get x range of next line
-      const nextXMin = Math.min(...nextLine.map((p) => p[0]));
-      const nextXMax = Math.max(...nextLine.map((p) => p[0]));
-
-      // Check if x ranges overlap
-      const overlapSize =
-        Math.min(currentXMax, nextXMax) - Math.max(currentXMin, nextXMin);
-      if (overlapSize > stepSize) {
-        // Require overlap of at least 30% of stepSize
-        edges.push([i, j]);
-        polylines.push([nodes[i], nodes[j]]);
-      }
-    }
+function findPathBetweenNodes(startId, endId, visitedNodes, medialGraph) {
+  // If either node is already visited, return empty path
+  if (visitedNodes.has(startId) || visitedNodes.has(endId)) {
+    return [];
   }
 
-  return {
-    nodes,
-    edges,
-    polylines: {
-      polylines,
-      attributes: {
-        stroke: "black",
-      },
-    },
-  };
-}
+  // Create a queue for BFS and a map to track the path
+  const queue = [[startId]];
+  const visited = new Set([startId]);
 
-function isPolygonClosed(polygon) {
-  if (polygon.length < 3) return false;
-  const first = polygon[0];
-  const last = polygon[polygon.length - 1];
-  // Check if first and last points are within a certain distance of each other
-  const margin = 0.1;
-  const dx = first[0] - last[0];
-  const dy = first[1] - last[1];
-  const distance = Math.sqrt(dx * dx + dy * dy);
-  return distance < margin;
-}
+  while (queue.length > 0) {
+    const path = queue.shift();
+    const currentNodeId = path[path.length - 1];
 
-function rasterizePolygonWithHoles(polygon, holes, stepSize) {
-  // 1. Find the polygon's bounding box
-  let minX = polygon[0][0];
-  let maxX = polygon[0][0];
-  let minY = polygon[0][1];
-  let maxY = polygon[0][1];
-
-  // Include holes in bounding box calculation
-  const allPoints = [polygon, ...holes].flat();
-  for (const [x, y] of allPoints) {
-    if (x < minX) minX = x;
-    if (x > maxX) maxX = x;
-    if (y < minY) minY = y;
-    if (y > maxY) maxY = y;
-  }
-
-  // 2. Generate scan lines
-  const scanLines = [];
-
-  for (let scanY = minY; scanY <= maxY; scanY += stepSize) {
-    // 3. Find all intersection points with the outer boundary
-    const outerIntersections = findHorizontalIntersections(polygon, scanY);
-
-    // 4. Find all intersection points with holes
-    const holeIntersections = holes.flatMap((hole) =>
-      findHorizontalIntersections(hole, scanY)
-    );
-
-    // 5. Combine and sort all intersections
-    const allIntersections = [...outerIntersections, ...holeIntersections].sort(
-      (a, b) => a - b
-    );
-
-    // 6. Create scan lines from pairs of intersections
-    // The first intersection starts a line, the second ends it
-    // The third starts a new line, the fourth ends it, and so on
-    for (let i = 0; i < allIntersections.length - 1; i += 2) {
-      const x1 = allIntersections[i];
-      const x2 = allIntersections[i + 1];
-      scanLines.push([
-        [x1, scanY],
-        [x2, scanY],
-      ]);
-    }
-  }
-
-  return scanLines;
-}
-
-/**
- * Returns an array of x-coordinates where the horizontal line y=scanY
- * intersects the polygon.
- */
-function findHorizontalIntersections(polygon, scanY) {
-  const xs = [];
-
-  // Loop over each edge of the polygon
-  for (let i = 0; i < polygon.length - 1; i++) {
-    const p1 = polygon[i];
-    const p2 = polygon[i + 1];
-
-    const y1 = p1[1];
-    const y2 = p2[1];
-    const x1 = p1[0];
-    const x2 = p2[0];
-
-    // Check if the horizontal line crosses between y1 and y2
-    // (strictly inside, ignoring exact matches for simplicity)
-    const minEdgeY = Math.min(y1, y2);
-    const maxEdgeY = Math.max(y1, y2);
-    if (scanY > minEdgeY && scanY <= maxEdgeY && y1 !== y2) {
-      // Linear interpolation to find the intersection x
-      const t = (scanY - y1) / (y2 - y1);
-      const intersectX = x1 + t * (x2 - x1);
-      xs.push(intersectX);
-    }
-  }
-
-  return xs;
-}
-
-// Helper function to rotate a point around a center
-function rotatePoint(point, center, angleDegrees) {
-  const [x, y] = point;
-  const [cx, cy] = center;
-  const angleRadians = (angleDegrees * Math.PI) / 180;
-
-  // Translate point to origin
-  const dx = x - cx;
-  const dy = y - cy;
-
-  // Rotate
-  const cos = Math.cos(angleRadians);
-  const sin = Math.sin(angleRadians);
-  const rotatedX = dx * cos - dy * sin;
-  const rotatedY = dx * sin + dy * cos;
-
-  // Translate back
-  return [rotatedX + cx, rotatedY + cy];
-}
-
-function groupScanLines(scanLines, stepSize) {
-  // Sort scan lines by y-coordinate (bottom to top)
-  const sortedLines = [...scanLines].sort((a, b) => a[0][1] - b[0][1]);
-  const groups = [];
-  const processedLines = new Set();
-
-  while (processedLines.size < sortedLines.length) {
-    const currentGroup = [];
-    let currentLineIndex = findLowestUnprocessedLine(
-      sortedLines,
-      processedLines
-    );
-
-    if (currentLineIndex === -1) break;
-
-    // Start a new group from the lowest unprocessed line
-    let currentLine = sortedLines[currentLineIndex];
-    currentGroup.push(currentLine);
-    processedLines.add(currentLineIndex);
-
-    // Follow connected lines upward
-    while (true) {
-      const nextLineIndex = findNextValidLine(
-        sortedLines,
-        currentLine,
-        processedLines,
-        stepSize
+    // If we reached the end node, convert the path to points
+    if (currentNodeId === endId) {
+      return path.map(
+        (nodeId) => medialGraph.nodes.find((n) => n.id === nodeId).point
       );
-
-      if (nextLineIndex === -1) break;
-
-      currentLine = sortedLines[nextLineIndex];
-      currentGroup.push(currentLine);
-      processedLines.add(nextLineIndex);
     }
 
-    groups.push(currentGroup);
-  }
+    // Find all unvisited neighbors
+    const neighbors = medialGraph.edges
+      .filter(([from, to]) => from === currentNodeId || to === currentNodeId)
+      .map(([from, to]) => (from === currentNodeId ? to : from))
+      .filter((id) => !visited.has(id) && !visitedNodes.has(id));
 
-  return groups;
-}
-
-function findLowestUnprocessedLine(sortedLines, processedLines) {
-  for (let i = 0; i < sortedLines.length; i++) {
-    if (!processedLines.has(i)) {
-      return i;
-    }
-  }
-  return -1;
-}
-
-function findNextValidLine(sortedLines, currentLine, processedLines, stepSize) {
-  const currentY = currentLine[0][1];
-
-  // Find all unprocessed lines above the current line
-  for (let i = 0; i < sortedLines.length; i++) {
-    if (processedLines.has(i)) continue;
-
-    const line = sortedLines[i];
-    if (line[0][1] <= currentY) continue;
-
-    // Check if there's a valid vertical path
-    if (
-      hasValidVerticalPath(
-        currentLine,
-        line,
-        sortedLines,
-        processedLines,
-        stepSize
-      )
-    ) {
-      return i;
+    // Add each neighbor to the queue with the updated path
+    for (const neighborId of neighbors) {
+      visited.add(neighborId);
+      queue.push([...path, neighborId]);
     }
   }
 
-  return -1;
+  // If no path found, return empty array
+  return [];
 }
 
-function hasValidVerticalPath(
-  line1,
-  line2,
-  allLines,
-  processedLines,
-  stepSize
-) {
-  // Get x ranges of both lines
-  const x1Min = Math.min(...line1.map((p) => p[0]));
-  const x1Max = Math.max(...line1.map((p) => p[0]));
-  const x2Min = Math.min(...line2.map((p) => p[0]));
-  const x2Max = Math.max(...line2.map((p) => p[0]));
-
-  // Check if x ranges overlap
-  if (x1Max < x2Min || x2Max < x1Min) {
-    return false;
-  }
-
-  if (Math.abs(line1[0][1] - line2[0][1]) > stepSize * 1.3) {
-    return false;
-  }
-
-  // Get the overlap region
-  const overlapMinX = Math.max(x1Min, x2Min);
-  const overlapMaxX = Math.min(x1Max, x2Max);
-
-  // Check if any processed line is in between
-  for (let i = 0; i < allLines.length; i++) {
-    if (!processedLines.has(i)) continue;
-
-    const line = allLines[i];
-    const lineY = line[0][1];
-
-    // Only check lines between our two points
-    if (
-      lineY <= Math.min(line1[0][1], line2[0][1]) ||
-      lineY >= Math.max(line1[0][1], line2[0][1])
-    )
-      continue;
-
-    // Get x range of this line
-    const lineXMin = Math.min(...line.map((p) => p[0]));
-    const lineXMax = Math.max(...line.map((p) => p[0]));
-
-    // Check if this line's x range overlaps with our overlap region
-    const lineOverlapSize =
-      Math.min(lineXMax, overlapMaxX) - Math.max(lineXMin, overlapMinX);
-    if (lineOverlapSize > stepSize) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-function createMergedPath(groups, medialPolylines) {
+function createMergedPath(groups, medialGraph) {
   const mergedPoints = [];
-  const visitedGroups = new Set();
+  const visitedNodes = new Set();
 
   for (let i = 0; i < groups.length; i++) {
     const currentGroup = groups[i];
     const currentPolyline = currentGroup.polylines[0];
-
-    // Add current group's points
     mergedPoints.push(...currentPolyline);
-    visitedGroups.add(i);
 
-    // If not the last group, find path to next group
+    currentGroup.attributes.scanlineIds.slice(2, -2).forEach((scanLineId) => {
+      visitedNodes.add(scanLineId);
+    });
+
     if (i < groups.length - 1) {
-      const nextGroup = groups[i + 1];
-      const nextPolyline = nextGroup.polylines[0];
-
-      // Get end point of current group and start point of next group
-      const endPoint = currentPolyline[currentPolyline.length - 1];
-      const startPoint = nextPolyline[0];
-
-      // Find path between these points using scanline groups
-      const connectingPath = findPathBetweenGroups(
-        i,
-        i + 1,
-        groups,
-        visitedGroups,
-        medialPolylines
+      const connectingPath = findPathBetweenNodes(
+        groups[i].attributes.scanlineIds.at(-1),
+        groups[i + 1].attributes.scanlineIds.at(0),
+        visitedNodes,
+        medialGraph
       );
 
       if (connectingPath.length > 0) {
@@ -473,12 +204,232 @@ function createMergedPath(groups, medialPolylines) {
   };
 }
 
-function findPathBetweenGroups(
-  startGroupIndex,
-  endGroupIndex,
-  groups,
-  visitedGroups,
-  medialPolylines
+function isPolygonClosed(polygon) {
+  if (polygon.length < 3) return false;
+  const first = polygon[0];
+  const last = polygon[polygon.length - 1];
+  const margin = 0.1;
+  const dx = first[0] - last[0];
+  const dy = first[1] - last[1];
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  return distance < margin;
+}
+
+function rasterizePolygonWithHoles(polygon, holes, stepSize) {
+  let minX = polygon[0][0];
+  let maxX = polygon[0][0];
+  let minY = polygon[0][1];
+  let maxY = polygon[0][1];
+
+  const allPoints = [polygon, ...holes].flat();
+  for (const [x, y] of allPoints) {
+    if (x < minX) minX = x;
+    if (x > maxX) maxX = x;
+    if (y < minY) minY = y;
+    if (y > maxY) maxY = y;
+  }
+
+  const scanLines = [];
+  for (let scanY = minY; scanY <= maxY; scanY += stepSize) {
+    const outerIntersections = findHorizontalIntersections(polygon, scanY);
+    const holeIntersections = holes.flatMap((hole) =>
+      findHorizontalIntersections(hole, scanY)
+    );
+    const allIntersections = [...outerIntersections, ...holeIntersections].sort(
+      (a, b) => a - b
+    );
+    for (let i = 0; i < allIntersections.length - 1; i += 2) {
+      const x1 = allIntersections[i];
+      const x2 = allIntersections[i + 1];
+      scanLines.push({
+        id: createRandStr(),
+        points: [
+          [x1, scanY],
+          [x2, scanY],
+        ],
+      });
+    }
+  }
+  return scanLines;
+}
+
+function findHorizontalIntersections(polygon, scanY) {
+  const xs = [];
+  for (let i = 0; i < polygon.length - 1; i++) {
+    const p1 = polygon[i];
+    const p2 = polygon[i + 1];
+    const y1 = p1[1];
+    const y2 = p2[1];
+    const x1 = p1[0];
+    const x2 = p2[0];
+    const minEdgeY = Math.min(y1, y2);
+    const maxEdgeY = Math.max(y1, y2);
+    if (scanY > minEdgeY && scanY <= maxEdgeY && y1 !== y2) {
+      const t = (scanY - y1) / (y2 - y1);
+      const intersectX = x1 + t * (x2 - x1);
+      xs.push(intersectX);
+    }
+  }
+  return xs;
+}
+
+function rotatePoint(point, center, angleDegrees) {
+  const [x, y] = point;
+  const [cx, cy] = center;
+  const angleRadians = (angleDegrees * Math.PI) / 180;
+  const dx = x - cx;
+  const dy = y - cy;
+  const cos = Math.cos(angleRadians);
+  const sin = Math.sin(angleRadians);
+  const rotatedX = dx * cos - dy * sin;
+  const rotatedY = dx * sin + dy * cos;
+  return [rotatedX + cx, rotatedY + cy];
+}
+
+function groupScanLines(scanLines, stepSize) {
+  const sortedLines = [...scanLines].sort(
+    (a, b) => a.points[0][1] - b.points[0][1]
+  );
+  const groups = [];
+  const processedLines = new Set();
+
+  while (processedLines.size < sortedLines.length) {
+    const currentGroup = [];
+    let currentLineIndex = findLowestUnprocessedLine(
+      sortedLines,
+      processedLines
+    );
+    if (currentLineIndex === -1) break;
+    let currentLine = sortedLines[currentLineIndex];
+    currentGroup.push(currentLine);
+    processedLines.add(currentLineIndex);
+    while (true) {
+      const nextLineIndex = findNextValidLine(
+        sortedLines,
+        currentLine,
+        processedLines,
+        stepSize
+      );
+      if (nextLineIndex === -1) break;
+      currentLine = sortedLines[nextLineIndex];
+      currentGroup.push(currentLine);
+      processedLines.add(nextLineIndex);
+    }
+    groups.push(currentGroup);
+  }
+  return groups;
+}
+
+function findLowestUnprocessedLine(sortedLines, processedLines) {
+  for (let i = 0; i < sortedLines.length; i++) {
+    if (!processedLines.has(i)) return i;
+  }
+  return -1;
+}
+
+function findNextValidLine(sortedLines, currentLine, processedLines, stepSize) {
+  const currentY = currentLine.points[0][1];
+  for (let i = 0; i < sortedLines.length; i++) {
+    if (processedLines.has(i)) continue;
+    const line = sortedLines[i];
+    if (line.points[0][1] <= currentY) continue;
+    if (
+      hasValidVerticalPath(
+        currentLine,
+        line,
+        sortedLines,
+        processedLines,
+        stepSize
+      )
+    )
+      return i;
+  }
+  return -1;
+}
+
+function hasValidVerticalPath(
+  line1,
+  line2,
+  allLines,
+  processedLines,
+  stepSize
 ) {
-  // this is imcomplete
+  const x1Min = Math.min(...line1.points.map((p) => p[0]));
+  const x1Max = Math.max(...line1.points.map((p) => p[0]));
+  const x2Min = Math.min(...line2.points.map((p) => p[0]));
+  const x2Max = Math.max(...line2.points.map((p) => p[0]));
+  if (x1Max < x2Min || x2Max < x1Min) return false;
+  if (Math.abs(line1.points[0][1] - line2.points[0][1]) > stepSize * 1.3)
+    return false;
+  const overlapMinX = Math.max(x1Min, x2Min);
+  const overlapMaxX = Math.min(x1Max, x2Max);
+  for (let i = 0; i < allLines.length; i++) {
+    if (!processedLines.has(i)) continue;
+    const line = allLines[i];
+    const lineY = line.points[0][1];
+    if (
+      lineY <= Math.min(line1.points[0][1], line2.points[0][1]) ||
+      lineY >= Math.max(line1.points[0][1], line2.points[0][1])
+    )
+      continue;
+    const lineXMin = Math.min(...line.points.map((p) => p[0]));
+    const lineXMax = Math.max(...line.points.map((p) => p[0]));
+    const lineOverlapSize =
+      Math.min(lineXMax, overlapMaxX) - Math.max(lineXMin, overlapMinX);
+    if (lineOverlapSize > stepSize) return false;
+  }
+  return true;
+}
+
+function makeMedialLineGraph(scanLines, stepSize) {
+  const nodes = [];
+  const nodeMap = {};
+  const edges = [];
+  const polylines = [];
+
+  scanLines.forEach((scanLine) => {
+    const points = scanLine.points;
+    const x1 = points[0][0];
+    const y1 = points[0][1];
+    const x2 = points[points.length - 1][0];
+    const midX = (x1 + x2) / 2;
+    const midY = y1;
+    nodes.push({ id: scanLine.id, point: [midX, midY] });
+    nodeMap[scanLine.id] = [midX, midY];
+  });
+
+  for (let i = 0; i < scanLines.length; i++) {
+    const currentLine = scanLines[i];
+    const currentY = currentLine.points[0][1];
+    const currentXMin = Math.min(...currentLine.points.map((p) => p[0]));
+    const currentXMax = Math.max(...currentLine.points.map((p) => p[0]));
+
+    for (let j = 0; j < scanLines.length; j++) {
+      if (i === j) continue;
+      const nextLine = scanLines[j];
+      const nextY = nextLine.points[0][1];
+      if (nextY <= currentY) continue;
+      const yDiff = nextY - currentY;
+      if (Math.abs(yDiff - stepSize) > stepSize * 0.3) continue;
+      const nextXMin = Math.min(...nextLine.points.map((p) => p[0]));
+      const nextXMax = Math.max(...nextLine.points.map((p) => p[0]));
+      const overlapSize =
+        Math.min(currentXMax, nextXMax) - Math.max(currentXMin, nextXMin);
+      if (overlapSize > stepSize) {
+        edges.push([nodes[i].id, nodes[j].id]);
+        polylines.push([nodes[i].point, nodes[j].point]);
+      }
+    }
+  }
+
+  return {
+    nodes,
+    edges,
+    polylines: {
+      polylines,
+      attributes: {
+        stroke: "black",
+      },
+    },
+  };
 }

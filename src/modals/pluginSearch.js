@@ -29,7 +29,7 @@ export function pluginSearch() {
         }}
       >
         <div
-          class="bg-white p-6 rounded shadow-md w-full max-w-md relative flex flex-col h-100 overflow-auto"
+          class="bg-white rounded shadow-md w-full max-w-md relative flex flex-col h-100 overflow-auto p-4"
           style="margin-top: 0; transform: translateY(0);"
         >
           <div class="mb-4">
@@ -55,7 +55,7 @@ export function pluginSearch() {
             />
           </div>
           <div
-            class="overflow-y-scroll max-h-[60vh]"
+            class="overflow-y-scroll max-h-[60vh] p-4"
             style="min-height: 200px;"
           >
             ${filteredPlugins.map(

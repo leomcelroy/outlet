@@ -35,6 +35,8 @@ import { hide } from "./plugins/hide.js";
 import { satinFill } from "./plugins/satinFill.js";
 import { offset } from "./plugins/offset.js";
 import { exportSVG } from "./plugins/exportSVG.js";
+import { colorCode } from "./plugins/colorCode.js";
+import { scaleToRect } from "./plugins/scaleToRect.js";
 
 export const STATE = {
   tool: "SELECT",
@@ -72,13 +74,19 @@ export const STATE = {
     // testDup,
     // demoModal,
     bitmap,
-    raster,
+    //raster,
     rasterFill,
     rasterPath,
     satinFill,
     exportDST,
     exportSVG,
+    // satinFill,
     hide,
+    colorCode,
+    scaleToRect,
+
+    // TRIGGERS
+    exportDST,
   ],
 
   currentPoint: null,
@@ -90,7 +98,18 @@ export const STATE = {
     switch (type) {
       case "SET_ACTIVE_LAYER": {
         const { layerId } = args;
+        clearEdgeStartIfNoConnections(STATE);
+
+        // Reset the current point and edge start
+        STATE.currentPoint = null;
+        STATE.edgeStart = null;
+
+        // Set the new layer as active
         STATE.activeLayer = layerId;
+        break;
+      }
+      case "EVALUATE_LAYERS": {
+        evaluateAllLayers();
         break;
       }
       case "TOGGLE_LAYER": {
@@ -117,6 +136,12 @@ export const STATE = {
           outputGeometry: [],
           inputGeometry: [],
         });
+
+        // Reset the current point and edge start
+        clearEdgeStartIfNoConnections(STATE);
+        STATE.currentPoint = null;
+        STATE.edgeStart = null;
+
         // Set the new layer as active
         STATE.activeLayer = newId;
         break;
@@ -384,11 +409,6 @@ export function init() {
   addAdaptiveGrid(sketchBoard, state);
 
   addSelectionBox(sketchBoard, state, ({ contains, selectBox }) => {
-    // Clear previous selection if not holding shift
-    if (!state.isShiftKey) {
-      state.selectedGeometry = new Set();
-    }
-
     // Select points that are inside the box and on the active layer
     state.geometries.forEach((geo) => {
       if (geo.type === "point" && geo.layer === state.activeLayer) {
