@@ -34,6 +34,8 @@ import { distribute } from "./plugins/distribute.js";
 import { hide } from "./plugins/hide.js";
 import { satinFill } from "./plugins/satinFill.js";
 import { exportSVG } from "./plugins/exportSVG.js";
+import { colorCode } from "./plugins/colorCode.js";
+import { scaleToRect } from "./plugins/scaleToRect.js";
 
 export const STATE = {
   tool: "SELECT",
@@ -78,6 +80,8 @@ export const STATE = {
     exportDST,
     exportSVG,
     hide,
+    colorCode,
+    scaleToRect,
   ],
 
   currentPoint: null,

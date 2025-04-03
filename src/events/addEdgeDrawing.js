@@ -73,6 +73,8 @@ export function addEdgeDrawing(el, state) {
     const p = {
       id: pId,
       type: "point",
+      cornerType: "straight",
+      cornerValue: 0,
       x: xId,
       y: yId,
       layer: state.activeLayer,
