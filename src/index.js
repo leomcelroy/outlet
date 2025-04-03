@@ -90,6 +90,13 @@ export const STATE = {
     switch (type) {
       case "SET_ACTIVE_LAYER": {
         const { layerId } = args;
+        clearEdgeStartIfNoConnections(STATE);
+
+        // Reset the current point and edge start
+        STATE.currentPoint = null;
+        STATE.edgeStart = null;
+
+        // Set the new layer as active
         STATE.activeLayer = layerId;
         break;
       }
@@ -117,6 +124,12 @@ export const STATE = {
           outputGeometry: [],
           inputGeometry: [],
         });
+
+        // Reset the current point and edge start
+        clearEdgeStartIfNoConnections(STATE);
+        STATE.currentPoint = null;
+        STATE.edgeStart = null;
+
         // Set the new layer as active
         STATE.activeLayer = newId;
         break;
