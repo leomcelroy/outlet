@@ -153,104 +153,112 @@ export function convertGraphToPolylines(geometries, params) {
 
   function convertIdsToCoords(ids) {
     const coords = [];
-    const curvePoints = [];
-    // Determine if the path is closed by checking if the first and last ids are equal.
+    const segments = [];
+    // Determine if the path is closed (first and last id are the same).
     const isClosed = ids[0] === ids[ids.length - 1];
 
-    for (let i = 0; i < ids.length; i++) {
-      const point = points.find((p) => p.id === ids[i]);
+    // For closed paths, ignore the duplicate endpoint.
+    const effectiveIds = isClosed ? ids.slice(0, -1) : ids;
 
-      // For open paths, treat endpoints as straight (ignore curves)
-      if (!isClosed && (i === 0 || i === ids.length - 1)) {
-        curvePoints.push({
+    // Build segments array
+    for (let i = 0; i < effectiveIds.length; i++) {
+      const id = effectiveIds[i];
+      const point = points.find((p) => p.id === id);
+
+      // For open paths, force endpoints as straight.
+      if (!isClosed && (i === 0 || i === effectiveIds.length - 1)) {
+        segments.push({
           type: "point",
           coords: getPointCoords(point.id),
         });
         continue;
       }
 
-      // For closed paths or internal points in an open path, compute previous and next with wrap-around.
+      // Compute neighbors with wrap-around.
       let prevIndex = i - 1;
-      if (prevIndex < 0) prevIndex = ids.length - 1;
+      if (prevIndex < 0) prevIndex = effectiveIds.length - 1;
       let nextIndex = i + 1;
-      if (nextIndex >= ids.length) nextIndex = 0;
-      const prevPoint = points.find((p) => p.id === ids[prevIndex]);
-      const nextPoint = points.find((p) => p.id === ids[nextIndex]);
+      if (nextIndex >= effectiveIds.length) nextIndex = 0;
+      const prevPoint = points.find((p) => p.id === effectiveIds[prevIndex]);
+      const nextPoint = points.find((p) => p.id === effectiveIds[nextIndex]);
 
       if (point.cornerType === "straight") {
-        curvePoints.push({
+        segments.push({
           type: "point",
           coords: getPointCoords(point.id),
-          current: point.id,
-          prev: prevPoint.id,
-          next: nextPoint.id,
         });
       } else if (point.cornerType === "curvy") {
-        if (isClosed && i === ids.length - 1) {
-          continue;
-        }
-
         const current = getPointCoords(point.id);
         const prev = getPointCoords(prevPoint.id);
         const next = getPointCoords(nextPoint.id);
 
-        // Set p0 and p3 as the midpoints of the segments leading into and out of the current point.
-        const p0 = [(prev[0] + current[0]) / 2, (prev[1] + current[1]) / 2];
-        const p3 = [(current[0] + next[0]) / 2, (current[1] + next[1]) / 2];
-        // Set control points as midpoints between p0/current and p3/current respectively.
-        const p1 = [(p0[0] + current[0]) / 2, (p0[1] + current[1]) / 2];
-        const p2 = [(p3[0] + current[0]) / 2, (p3[1] + current[1]) / 2];
+        // Calculate the corner value, defaulting to 0.5 if not specified
+        const corner =
+          point.cornerValue !== undefined ? point.cornerValue : 0.5;
 
-        curvePoints.push({
+        // p0 and p3 are points along the adjacent segments, controlled by corner value
+        const p0 = [
+          prev[0] + (current[0] - prev[0]) * corner,
+          prev[1] + (current[1] - prev[1]) * corner,
+        ];
+        const p3 = [
+          current[0] + (next[0] - current[0]) * corner,
+          current[1] + (next[1] - current[1]) * corner,
+        ];
+
+        // Control points are interpolated between current and p0/p3
+        const p1 = [
+          p0[0] + (current[0] - p0[0]) * corner,
+          p0[1] + (current[1] - p0[1]) * corner,
+        ];
+        const p2 = [
+          p3[0] + (current[0] - p3[0]) * corner,
+          p3[1] + (current[1] - p3[1]) * corner,
+        ];
+
+        segments.push({
           type: "curve",
           p0,
           p1,
           p2,
           p3,
-          i,
-          prevIndex,
-          nextIndex,
-          current: point.id,
-          prev: prevPoint.id,
-          next: nextPoint.id,
         });
       }
     }
 
-    console.log({ curvePoints });
-
-    // Interpolate points and curves.
-    for (let i = 0; i < curvePoints.length; i++) {
-      const current = curvePoints[i];
-      const next = curvePoints[(i + 1) % curvePoints.length];
-
-      if (current.type === "point") {
-        coords.push(current.coords);
-      } else if (current.type === "curve") {
-        const steps = 10;
+    // Interpolate each segment.
+    segments.forEach((segment) => {
+      if (segment.type === "point") {
+        coords.push(segment.coords);
+      } else if (segment.type === "curve") {
+        const steps = 32;
         for (let t = 0; t <= 1; t += 1 / steps) {
           const x = cubicBezier(
             t,
-            current.p0[0],
-            current.p1[0],
-            current.p2[0],
-            current.p3[0]
+            segment.p0[0],
+            segment.p1[0],
+            segment.p2[0],
+            segment.p3[0]
           );
           const y = cubicBezier(
             t,
-            current.p0[1],
-            current.p1[1],
-            current.p2[1],
-            current.p3[1]
+            segment.p0[1],
+            segment.p1[1],
+            segment.p2[1],
+            segment.p3[1]
           );
           coords.push([x, y]);
         }
       }
-    }
+    });
 
-    // For closed paths, ensure the last point connects back to the first
+    // For closed paths, ensure the shape is properly closed.
     if (isClosed && coords.length > 0) {
-      coords.push(coords[0]);
+      const first = coords[0];
+      const last = coords[coords.length - 1];
+      if (first[0] !== last[0] || first[1] !== last[1]) {
+        coords.push(first);
+      }
     }
 
     return coords;

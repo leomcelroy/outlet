@@ -6,8 +6,8 @@ import { drawLayers } from "./drawLayers.js";
 import { drawLayerTree } from "./drawLayerTree.js";
 import { drawPlugins } from "./drawPlugins.js";
 import { drawGrid } from "./drawGrid.js";
-
 import { drawTempEdge } from "./drawTempEdge.js";
+import { drawPointProperties } from "./drawPointProperties.js";
 
 function formatCoord(value) {
   if (value == null) return "     0.0";
@@ -70,7 +70,7 @@ export function view(state) {
               <span>${formatCoord(state.canvasY)}</span>
             </div>
           </div>
-          ${drawToolbar(state)}
+          ${drawToolbar(state)} ${drawPointProperties(state)}
           <div
             modal-controls-container
             class="absolute bottom-0 right-0 z-10"

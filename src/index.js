@@ -73,7 +73,7 @@ export const STATE = {
     // testDup,
     // demoModal,
     bitmap,
-    raster,
+    //raster,
     rasterFill,
     rasterPath,
     satinFill,
@@ -82,6 +82,9 @@ export const STATE = {
     hide,
     colorCode,
     scaleToRect,
+
+    // TRIGGERS
+    exportDST,
   ],
 
   currentPoint: null,
@@ -93,7 +96,18 @@ export const STATE = {
     switch (type) {
       case "SET_ACTIVE_LAYER": {
         const { layerId } = args;
+        clearEdgeStartIfNoConnections(STATE);
+
+        // Reset the current point and edge start
+        STATE.currentPoint = null;
+        STATE.edgeStart = null;
+
+        // Set the new layer as active
         STATE.activeLayer = layerId;
+        break;
+      }
+      case "EVALUATE_LAYERS": {
+        evaluateAllLayers();
         break;
       }
       case "TOGGLE_LAYER": {
@@ -120,6 +134,12 @@ export const STATE = {
           outputGeometry: [],
           inputGeometry: [],
         });
+
+        // Reset the current point and edge start
+        clearEdgeStartIfNoConnections(STATE);
+        STATE.currentPoint = null;
+        STATE.edgeStart = null;
+
         // Set the new layer as active
         STATE.activeLayer = newId;
         break;
@@ -387,11 +407,6 @@ export function init() {
   addAdaptiveGrid(sketchBoard, state);
 
   addSelectionBox(sketchBoard, state, ({ contains, selectBox }) => {
-    // Clear previous selection if not holding shift
-    if (!state.isShiftKey) {
-      state.selectedGeometry = new Set();
-    }
-
     // Select points that are inside the box and on the active layer
     state.geometries.forEach((geo) => {
       if (geo.type === "point" && geo.layer === state.activeLayer) {
