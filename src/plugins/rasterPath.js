@@ -45,8 +45,9 @@ export const rasterPath = {
     for (const child of inputGeometry) {
       // Create a map to store paths by ID
       for (const polyline of child.polylines) {
-        const newPolyline = [];
         const resampled = resamplePolylines([polyline], spacing)[0];
+        const newPolyline = [resampled[0]];
+
         for (let i = 0; i < resampled.length - 1; i++) {
           const p1 = resampled[i];
           const p2 = resampled[i + 1];
@@ -57,6 +58,8 @@ export const rasterPath = {
           // Add the perpendicular points to the polyline
           newPolyline.push(...perpendicularPoints);
         }
+
+        newPolyline.push(resampled[resampled.length - 1]);
 
         allPolylines.push({
           polylines: [newPolyline],
