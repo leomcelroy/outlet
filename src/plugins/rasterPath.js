@@ -24,13 +24,13 @@ export const rasterPath = {
           id: "spacing",
           type: "number",
           label: "Spacing",
-          value: 10,
+          value: 1,
         },
       ],
     };
   },
   process(controls, inputGeometry) {
-    const { thickness, spacing } = controls;
+    let { thickness, spacing } = controls;
 
     if (thickness < 0.2) {
       thickness = 0.2;
@@ -40,97 +40,62 @@ export const rasterPath = {
     }
 
     // Create a map to store paths by ID
-    const pathsByID = new Map();
+    const allPolylines = [];
 
     for (const child of inputGeometry) {
-      const resampled = resamplePolylines(child.polylines, spacing);
-      for (const polyline of resampled) {
-        // Skip empty polylines
-        if (!polyline || polyline.length === 0) continue;
+      // Create a map to store paths by ID
+      for (const polyline of child.polylines) {
+        const resampled = resamplePolylines([polyline], spacing)[0];
+        const newPolyline = [resampled[0]];
 
-        const perpendicularPoints = [];
+        for (let i = 0; i < resampled.length - 1; i++) {
+          const p1 = resampled[i];
+          const p2 = resampled[i + 1];
 
-        // Handle single point case
-        if (polyline.length === 1) {
-          const [x, y] = polyline[0];
-          // For a single point, create a small horizontal line
-          perpendicularPoints.push([x - thickness, y]);
-          perpendicularPoints.push([x + thickness, y]);
-        } else {
-          // First pass: create perpendicular lines along the path
-          for (let i = 0; i < polyline.length - 1; i++) {
-            const [x1, y1] = polyline[i];
-            const [x2, y2] = polyline[i + 1];
+          // Get the perpendicular points
+          const perpendicularPoints = getPerpendicularPoints(p1, p2, thickness);
 
-            const segDx = x2 - x1;
-            const segDy = y2 - y1;
-            const length = Math.sqrt(segDx * segDx + segDy * segDy);
-
-            // Calculate perpendicular vector
-            const perpX = -segDy / length;
-            const perpY = segDx / length;
-
-            // Calculate number of segments based on length and spacing
-            const numSegments = Math.max(1, Math.floor(length / spacing));
-
-            // Add points for perpendicular line
-            for (let j = 0; j <= numSegments; j++) {
-              const t = j / numSegments;
-              const x = x1 + segDx * t;
-              const y = y1 + segDy * t;
-
-              perpendicularPoints.push([
-                x + perpX * thickness,
-                y + perpY * thickness,
-              ]);
-              perpendicularPoints.push([
-                x - perpX * thickness,
-                y - perpY * thickness,
-              ]);
-            }
-          }
-
-          // Handle the last point
-          const [lastX, lastY] = polyline[polyline.length - 1];
-          const [lastPrevX, lastPrevY] = polyline[polyline.length - 2];
-          const lastSegDx = lastX - lastPrevX;
-          const lastSegDy = lastY - lastPrevY;
-          const lastLength = Math.sqrt(
-            lastSegDx * lastSegDx + lastSegDy * lastSegDy
-          );
-          const lastPerpX = -lastSegDy / lastLength;
-          const lastPerpY = lastSegDx / lastLength;
-          perpendicularPoints.push([
-            lastX + lastPerpX * thickness,
-            lastY + lastPerpY * thickness,
-          ]);
-          perpendicularPoints.push([
-            lastX - lastPerpX * thickness,
-            lastY - lastPerpY * thickness,
-          ]);
+          // Add the perpendicular points to the polyline
+          newPolyline.push(...perpendicularPoints);
         }
 
-        // Second pass: create the zigzag path by connecting points
-        if (perpendicularPoints.length > 0) {
-          // If we already have data for this ID, append to it
-          if (pathsByID.has(child.id)) {
-            const existingPolylines = pathsByID.get(child.id);
-            pathsByID.set(child.id, [
-              ...existingPolylines,
-              perpendicularPoints,
-            ]);
-          } else {
-            pathsByID.set(child.id, [perpendicularPoints]);
-          }
-        }
+        newPolyline.push(resampled[resampled.length - 1]);
+
+        allPolylines.push({
+          polylines: [newPolyline],
+          attributes: child.attributes,
+        });
       }
     }
 
-    // Convert the map back to an array of paths
-    return Array.from(pathsByID.entries()).map(([id, polylines]) => ({
-      id,
-      polylines,
-      attributes: {},
-    }));
+    return allPolylines;
   },
 };
+
+function getPerpendicularPoints(p1, p2, distance = 1) {
+  // Calculate the vector between p1 and p2
+  const dx = p2[0] - p1[0];
+  const dy = p2[1] - p1[1];
+
+  // Calculate the length of the vector
+  const length = Math.sqrt(dx * dx + dy * dy);
+
+  // Normalize the vector
+  const nx = dx / length;
+  const ny = dy / length;
+
+  // Calculate the perpendicular vector (rotate 90 degrees)
+  const px = -ny;
+  const py = nx;
+
+  // Calculate the midpoint
+  const mx = (p1[0] + p2[0]) / 2;
+  const my = (p1[1] + p2[1]) / 2;
+
+  // Calculate the two perpendicular points
+  const point1 = [mx + px * distance, my + py * distance];
+
+  const point2 = [mx - px * distance, my - py * distance];
+
+  return [point1, point2];
+}

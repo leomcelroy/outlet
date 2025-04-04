@@ -25,12 +25,6 @@ export const exportDST = {
           value: 3,
         },
         {
-          id: "maxDimension",
-          label: "Max Dimension (mm)",
-          type: "number",
-          value: 50,
-        },
-        {
           id: "designName",
           label: "Design Name",
           type: "string",
@@ -46,17 +40,8 @@ export const exportDST = {
 
     console.log({ pls, controls });
 
-    const bbox = bounds(pls);
-    const targetWidth = controls.maxDimension;
-    const targetHeight = controls.maxDimension;
-    const border = 0;
     const targetCenter = [0, 0];
-    const scaleFactor = Math.min(
-      (targetWidth - border * 2) / bbox.width,
-      (targetHeight - border * 2) / bbox.height
-    );
 
-    scale(pls, scaleFactor);
     translate(pls, targetCenter, bounds(pls).cc);
 
     const dstBuffer = tajimaDSTExport({

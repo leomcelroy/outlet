@@ -43,6 +43,7 @@ export const STATE = {
   params: {},
   selectedGeometry: new Set(),
   geometries: [],
+  clipboard: null,
   layers: [
     {
       id: "DEFAULT_LAYER",
@@ -103,6 +104,7 @@ export const STATE = {
         // Reset the current point and edge start
         STATE.currentPoint = null;
         STATE.edgeStart = null;
+        STATE.selectedGeometry = new Set();
 
         // Set the new layer as active
         STATE.activeLayer = layerId;

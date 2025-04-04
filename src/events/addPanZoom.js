@@ -50,7 +50,7 @@ export function addPanZoom(el) {
     start = { x: x - pointX, y: y - pointY };
 
     if (e.detail === 2) {
-      console.log(x, y, getPoint(x, y));
+      // console.log(x, y, getPoint(x, y));
     }
   });
 
