@@ -66,8 +66,8 @@ export function addHotKeys(state) {
       // First, create new parameters for all points
       state.clipboard.forEach((geo) => {
         if (geo.type === "point") {
-          const newXId = `x${createRandStr(4)}`;
-          const newYId = `y${createRandStr(4)}`;
+          const newXId = `x${createRandStr()}`;
+          const newYId = `y${createRandStr()}`;
 
           // Store the old parameter IDs and their new values
           idMap.set(geo.x, newXId);
@@ -82,7 +82,7 @@ export function addHotKeys(state) {
       // Then create new geometries with new IDs
       state.clipboard.forEach((geo) => {
         const newGeo = { ...geo };
-        newGeo.id = `geo${createRandStr(4)}`;
+        newGeo.id = `geo${createRandStr()}`;
         idMap.set(geo.id, newGeo.id);
         newGeo.layer = state.activeLayer; // Set the layer to current active layer
 

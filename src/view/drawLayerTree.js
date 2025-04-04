@@ -51,9 +51,7 @@ function renderLayerTree(tree, state) {
               @click=${() =>
                 state.dispatch({ type: "SET_ACTIVE_LAYER", layerId: node.id })}
               @dblclick=${(e) => {
-                if (node.id !== "DEFAULT_LAYER") {
-                  changeLayerName(e, state, node);
-                }
+                changeLayerName(e, state, node);
               }}
             >
               ${node.name}

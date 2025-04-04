@@ -13,6 +13,7 @@ import { addAdaptiveGrid } from "./events/addAdaptiveGrid.js";
 import { moveLayer } from "./actions/moveLayer.js";
 import { duplicateLayer } from "./actions/duplicateLayer.js";
 import { view } from "./view/view.js";
+import { createRandStr } from "./utils/createRandStr.js";
 import { evaluateAllLayers } from "./utils/evaluateAllLayers.js";
 import { clearEdgeStartIfNoConnections } from "./utils/clearEdgeStartIfNoConnections.js";
 import { pluginSearch } from "./modals/pluginSearch.js";
@@ -35,6 +36,8 @@ import { hide } from "./plugins/hide.js";
 import { satinFill } from "./plugins/satinFill.js";
 import { colorCode } from "./plugins/colorCode.js";
 import { scaleToRect } from "./plugins/scaleToRect.js";
+import { getDefaultLayer } from "./utils/getDefaultLayer.js";
+import { duplicateAndReidentify } from "./utils/duplicateAndReidentify.js";
 
 export const STATE = {
   tool: "SELECT",
@@ -286,7 +289,7 @@ export const STATE = {
             inputGeometry: [],
           },
         ];
-        STATE.activeLayer = "DEFAULT_LAYER";
+        STATE.activeLayer = getDefaultLayer().id;
         evaluateAllLayers();
 
         // Save the cleared state to cache
@@ -300,19 +303,6 @@ export const STATE = {
       }
       case "DELETE_LAYER": {
         const { layerId } = args;
-
-        if (layerId === "DEFAULT_LAYER") {
-          // For default layer, just clear the geometry but keep the layer
-          STATE.geometries = STATE.geometries.filter(
-            (g) => g.layer !== layerId
-          );
-
-          STATE.currentPoint = null;
-          STATE.edgeStart = null;
-
-          evaluateAllLayers();
-          break;
-        }
 
         // Find the layer to delete
         const layerIndex = STATE.layers.findIndex((l) => l.id === layerId);
@@ -335,7 +325,7 @@ export const STATE = {
 
         // If the deleted layer was active, set active layer to default
         if (STATE.activeLayer === layerId) {
-          STATE.activeLayer = "DEFAULT_LAYER";
+          STATE.activeLayer = getDefaultLayer().id;
         }
 
         STATE.dispatch({ type: "OPEN_PLUGIN_MODAL", pluginId: null });
@@ -359,6 +349,25 @@ export const STATE = {
         STATE.selectedGeometry = new Set();
 
         STATE.tool = tool;
+        break;
+      }
+      case "ADD_DROP_UPLOAD": {
+        const { file } = args;
+        const newState = JSON.parse(file);
+
+        // Duplicate and reidentify the imported state
+        const duplicated = duplicateAndReidentify(
+          newState.layers,
+          newState.geometries,
+          newState.params
+        );
+
+        // Update state with duplicated data
+        STATE.layers = [...STATE.layers, ...duplicated.layers];
+        STATE.geometries = [...STATE.geometries, ...duplicated.geometries];
+        STATE.params = { ...STATE.params, ...duplicated.params };
+
+        evaluateAllLayers();
         break;
       }
       default:
@@ -422,9 +431,19 @@ export function init() {
 
   addDropUpload((file) => {
     const newState = JSON.parse(file);
-    for (const key in newState) {
-      state[key] = newState[key];
-    }
+
+    // Duplicate and reidentify the imported state
+    const duplicated = duplicateAndReidentify(
+      newState.layers,
+      newState.geometries,
+      newState.params
+    );
+
+    // Update state with duplicated data
+    state.layers = [...state.layers, ...duplicated.layers];
+    state.geometries = [...state.geometries, ...duplicated.geometries];
+    state.params = { ...state.params, ...duplicated.params };
+
     evaluateAllLayers();
   });
 
