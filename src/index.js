@@ -34,6 +34,8 @@ import { align } from "./plugins/align.js";
 import { distribute } from "./plugins/distribute.js";
 import { hide } from "./plugins/hide.js";
 import { satinFill } from "./plugins/satinFill.js";
+import { offset } from "./plugins/offset.js";
+import { exportSVG } from "./plugins/exportSVG.js";
 import { colorCode } from "./plugins/colorCode.js";
 import { scaleToRect } from "./plugins/scaleToRect.js";
 import { getDefaultLayer } from "./utils/getDefaultLayer.js";
@@ -71,6 +73,7 @@ export const STATE = {
     rotate,
     scale,
     align,
+    offset,
     distribute,
     // testDup,
     // demoModal,
@@ -78,6 +81,9 @@ export const STATE = {
     //raster,
     rasterFill,
     rasterPath,
+    satinFill,
+    exportDST,
+    exportSVG,
     // satinFill,
     hide,
     colorCode,
