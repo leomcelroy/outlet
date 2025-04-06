@@ -13,11 +13,15 @@ import { addAdaptiveGrid } from "./events/addAdaptiveGrid.js";
 import { moveLayer } from "./actions/moveLayer.js";
 import { duplicateLayer } from "./actions/duplicateLayer.js";
 import { view } from "./view/view.js";
-import { createRandStr } from "./utils/createRandStr.js";
+
 import { evaluateAllLayers } from "./utils/evaluateAllLayers.js";
 import { clearEdgeStartIfNoConnections } from "./utils/clearEdgeStartIfNoConnections.js";
+import { getDefaultLayer } from "./utils/getDefaultLayer.js";
+import { duplicateAndReidentify } from "./utils/duplicateAndReidentify.js";
+
 import { pluginSearch } from "./modals/pluginSearch.js";
 import { pluginControlModal } from "./modals/pluginControlModal.js";
+
 import { fill } from "./plugins/fill.js";
 import { stroke } from "./plugins/stroke.js";
 import { testDup } from "./plugins/testDup.js";
@@ -36,8 +40,6 @@ import { hide } from "./plugins/hide.js";
 import { satinFill } from "./plugins/satinFill.js";
 import { colorCode } from "./plugins/colorCode.js";
 import { scaleToRect } from "./plugins/scaleToRect.js";
-import { getDefaultLayer } from "./utils/getDefaultLayer.js";
-import { duplicateAndReidentify } from "./utils/duplicateAndReidentify.js";
 
 export const STATE = {
   tool: "SELECT",
@@ -105,6 +107,8 @@ export const STATE = {
 
         // Set the new layer as active
         STATE.activeLayer = layerId;
+
+        STATE.dispatch({ type: "OPEN_PLUGIN_MODAL", pluginId: null });
         break;
       }
       case "EVALUATE_LAYERS": {
@@ -351,25 +355,6 @@ export const STATE = {
         STATE.tool = tool;
         break;
       }
-      case "ADD_DROP_UPLOAD": {
-        const { file } = args;
-        const newState = JSON.parse(file);
-
-        // Duplicate and reidentify the imported state
-        const duplicated = duplicateAndReidentify(
-          newState.layers,
-          newState.geometries,
-          newState.params
-        );
-
-        // Update state with duplicated data
-        STATE.layers = [...STATE.layers, ...duplicated.layers];
-        STATE.geometries = [...STATE.geometries, ...duplicated.geometries];
-        STATE.params = { ...STATE.params, ...duplicated.params };
-
-        evaluateAllLayers();
-        break;
-      }
       default:
         console.log("Unknown event:", type);
         break;
@@ -433,11 +418,7 @@ export function init() {
     const newState = JSON.parse(file);
 
     // Duplicate and reidentify the imported state
-    const duplicated = duplicateAndReidentify(
-      newState.layers,
-      newState.geometries,
-      newState.params
-    );
+    const duplicated = duplicateAndReidentify(newState);
 
     // Update state with duplicated data
     state.layers = [...state.layers, ...duplicated.layers];
