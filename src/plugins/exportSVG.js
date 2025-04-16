@@ -54,7 +54,7 @@ export const exportSVG = {
     const precision = 6;
 
     // Calculate document bounds
-    const bounds = getBounds(geometry);
+    const bounds = getBounds(inputGeometry);
 
     // Start SVG document
     let svgContent = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n';
@@ -65,10 +65,8 @@ export const exportSVG = {
     svgContent += '<svg xmlns="http://www.w3.org/2000/svg" ';
     svgContent += 'xmlns:xlink="http://www.w3.org/1999/xlink" ';
 
-    if (includeViewbox) {
-      svgContent += `viewBox="${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}" `;
-      svgContent += `width="${bounds.width}mm" height="${bounds.height}mm" `;
-    }
+    svgContent += `viewBox="${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}" `;
+    svgContent += `width="${bounds.width}mm" height="${bounds.height}mm" `;
 
     svgContent += 'version="1.1">\n';
 
@@ -86,7 +84,7 @@ export const exportSVG = {
     svgContent += "  </metadata>\n";
 
     // Process each path
-    geometry.forEach((path, index) => {
+    inputGeometry.forEach((path, index) => {
       path.polylines.forEach((polyline, polyIndex) => {
         if (polyline.length < 2) return; // Skip paths with less than 2 points
 
@@ -142,8 +140,5 @@ export const exportSVG = {
 
     // Cleanup
     URL.revokeObjectURL(url);
-
-    // Return input geometry unchanged
-    return inputGeometry;
   },
 };
