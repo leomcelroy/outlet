@@ -75,7 +75,7 @@ export const STATE = {
     rotate,
     scale,
     align,
-    offset,
+    // offset,
     distribute,
     // testDup,
     // demoModal,
@@ -84,8 +84,6 @@ export const STATE = {
     rasterFill,
     rasterPath,
     satinFill,
-    exportDST,
-    exportSVG,
     // satinFill,
     hide,
     colorCode,
@@ -93,6 +91,7 @@ export const STATE = {
 
     // TRIGGERS
     exportDST,
+    exportSVG,
   ],
 
   currentPoint: null,
