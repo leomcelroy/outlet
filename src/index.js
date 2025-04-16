@@ -74,6 +74,7 @@ export const STATE = {
     translate,
     rotate,
     scale,
+    scaleToRect,
     align,
     // offset,
     distribute,
@@ -83,11 +84,10 @@ export const STATE = {
     //raster,
     rasterFill,
     rasterPath,
-    satinFill,
+    // satinFill,
     // satinFill,
     hide,
     colorCode,
-    scaleToRect,
 
     // TRIGGERS
     exportDST,

@@ -30,15 +30,22 @@ export const scaleToRect = {
         {
           id: "border",
           type: "number",
-          value: options.border || 5,
+          value: options.border || 0,
           label: "Border",
           min: 0,
+        },
+        {
+          id: "aspect-ratio",
+          type: "boolean",
+          value: true,
+          label: "Keep Aspect Ratio",
         },
       ],
     };
   },
   process(controls, inputGeometry) {
     const { width, height, border } = controls;
+    const keepAspectRatio = controls["aspect-ratio"];
 
     // Calculate the effective dimensions after border
     const effectiveWidth = width - 2 * border;
@@ -72,13 +79,17 @@ export const scaleToRect = {
     const scaleY = effectiveHeight / currentHeight;
     const scale = Math.min(scaleX, scaleY);
 
+    // Define the scale factors to use based on keepAspectRatio
+    const finalScaleX = keepAspectRatio ? scale : scaleX;
+    const finalScaleY = keepAspectRatio ? scale : scaleY;
+
     // Transform the geometry
     return inputGeometry.map((geometry) => ({
       polylines: geometry.polylines.map((polyline) =>
         polyline.map((point) => {
           // Scale relative to center without moving
-          const scaledX = centerX + (point[0] - centerX) * scale;
-          const scaledY = centerY + (point[1] - centerY) * scale;
+          const scaledX = centerX + (point[0] - centerX) * finalScaleX;
+          const scaledY = centerY + (point[1] - centerY) * finalScaleY;
 
           return [scaledX, scaledY];
         })

@@ -27,12 +27,14 @@ export function convertIdsToCoords(ids, points, params) {
       const current = getPointCoords(point.id);
       const prev = getPointCoords(prevPoint.id);
       const next = getPointCoords(nextPoint.id);
-      const corner = point.cornerValue !== undefined ? point.cornerValue : 0.2;
+      let corner = point.cornerValue !== undefined ? point.cornerValue : 0.5;
+      corner = 0.5;
       const vIn = [current[0] - prev[0], current[1] - prev[1]];
       const vOut = [next[0] - current[0], next[1] - current[1]];
       const p0 = [current[0] - vIn[0] * corner, current[1] - vIn[1] * corner];
       const p3 = [current[0] + vOut[0] * corner, current[1] + vOut[1] * corner];
-      const kappa = 0.5522847498307936;
+      let kappa = 0.5522847498307936;
+      // kappa = 0.45;
       const p1 = [
         p0[0] + (current[0] - p0[0]) * kappa,
         p0[1] + (current[1] - p0[1]) * kappa,
