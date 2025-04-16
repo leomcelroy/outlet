@@ -138,7 +138,7 @@ export function drawTopBar(state) {
         @click=${(e) => {
           state.dispatch({ type: "DUPLICATE_LAYER" });
         }}
-        class="hidden hover:bg-gray-200 w-fit p-2 cursor-pointer"
+        class="hover:bg-gray-200 w-fit p-2 cursor-pointer"
       >
         Duplicate Layer
       </div>

@@ -64,12 +64,12 @@ export function addEdgeDrawing(el, state) {
   });
 
   function addPoint(x, y) {
-    const xId = createRandStr(4);
-    const yId = createRandStr(4);
+    const xId = createRandStr();
+    const yId = createRandStr();
     state.params[xId] = x;
     state.params[yId] = y;
 
-    const pId = createRandStr(4);
+    const pId = createRandStr();
     const p = {
       id: pId,
       type: "point",
@@ -86,7 +86,7 @@ export function addEdgeDrawing(el, state) {
   }
 
   function addEdge(startId, endId) {
-    const edgeId = createRandStr(4);
+    const edgeId = createRandStr();
     const edge = {
       id: edgeId,
       type: "edge",

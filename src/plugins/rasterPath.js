@@ -24,7 +24,7 @@ export const rasterPath = {
           id: "spacing",
           type: "number",
           label: "Spacing",
-          value: 1,
+          value: 0.5,
         },
       ],
     };
@@ -53,7 +53,11 @@ export const rasterPath = {
           const p2 = resampled[i + 1];
 
           // Get the perpendicular points
-          const perpendicularPoints = getPerpendicularPoints(p1, p2, thickness);
+          const perpendicularPoints = getPerpendicularPoints(
+            p1,
+            p2,
+            thickness / 2
+          );
 
           // Add the perpendicular points to the polyline
           newPolyline.push(...perpendicularPoints);
