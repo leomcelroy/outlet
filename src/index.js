@@ -42,6 +42,7 @@ import { offset } from "./plugins/offset.js";
 import { exportSVG } from "./plugins/exportSVG.js";
 import { colorCode } from "./plugins/colorCode.js";
 import { scaleToRect } from "./plugins/scaleToRect.js";
+import { importImage } from "./plugins/importImage/importImage.js";
 
 export const STATE = {
   tool: "SELECT",
@@ -88,6 +89,7 @@ export const STATE = {
     // satinFill,
     hide,
     colorCode,
+    importImage,
 
     // TRIGGERS
     exportDST,
